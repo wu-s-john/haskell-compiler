@@ -1,0 +1,8 @@
+TypeIdentifier "Cool"
+ObjectIdentifier "is"
+NotKeyword
+TypeIdentifier "C"
+ColonOperator
+IntegerToken 0
+ObjectIdentifier "xabc"
+IntegerToken 987

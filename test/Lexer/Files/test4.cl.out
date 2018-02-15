@@ -1,0 +1,326 @@
+ClassKeyword
+TypeIdentifier "Foo"
+InheritsKeyword
+TypeIdentifier "Bazz"
+LeftCurlyBracesOperator
+ObjectIdentifier "a"
+ColonOperator
+TypeIdentifier "Razz"
+AssignmentOperator
+CaseKeyword
+ObjectIdentifier "self"
+OfKeyword
+ObjectIdentifier "n"
+ColonOperator
+TypeIdentifier "Razz"
+TypeBoundOperator
+LeftParenthesesOperator
+NewKeyword
+TypeIdentifier "Bar"
+RightParenthesesOperator
+SemicolonOperator
+ObjectIdentifier "n"
+ColonOperator
+TypeIdentifier "Foo"
+TypeBoundOperator
+LeftParenthesesOperator
+NewKeyword
+TypeIdentifier "Razz"
+RightParenthesesOperator
+SemicolonOperator
+ObjectIdentifier "n"
+ColonOperator
+TypeIdentifier "Bar"
+TypeBoundOperator
+ObjectIdentifier "n"
+SemicolonOperator
+EsacKeyword
+SemicolonOperator
+ObjectIdentifier "b"
+ColonOperator
+TypeIdentifier "Int"
+AssignmentOperator
+ObjectIdentifier "a"
+PeriodOperator
+ObjectIdentifier "doh"
+LeftParenthesesOperator
+RightParenthesesOperator
+PlusOperator
+ObjectIdentifier "g"
+PeriodOperator
+ObjectIdentifier "doh"
+LeftParenthesesOperator
+RightParenthesesOperator
+PlusOperator
+ObjectIdentifier "doh"
+LeftParenthesesOperator
+RightParenthesesOperator
+PlusOperator
+ObjectIdentifier "printh"
+LeftParenthesesOperator
+RightParenthesesOperator
+SemicolonOperator
+ObjectIdentifier "doh"
+LeftParenthesesOperator
+RightParenthesesOperator
+ColonOperator
+TypeIdentifier "Int"
+LeftCurlyBracesOperator
+LeftParenthesesOperator
+LetKeyword
+ObjectIdentifier "i"
+ColonOperator
+TypeIdentifier "Int"
+AssignmentOperator
+ObjectIdentifier "h"
+InKeyword
+LeftCurlyBracesOperator
+ObjectIdentifier "h"
+AssignmentOperator
+ObjectIdentifier "h"
+PlusOperator
+IntegerToken 2
+SemicolonOperator
+ObjectIdentifier "i"
+SemicolonOperator
+RightCurlyBracesOperator
+RightParenthesesOperator
+RightCurlyBracesOperator
+SemicolonOperator
+RightCurlyBracesOperator
+SemicolonOperator
+ClassKeyword
+TypeIdentifier "Bar"
+InheritsKeyword
+TypeIdentifier "Razz"
+LeftCurlyBracesOperator
+ObjectIdentifier "c"
+ColonOperator
+TypeIdentifier "Int"
+AssignmentOperator
+ObjectIdentifier "doh"
+LeftParenthesesOperator
+RightParenthesesOperator
+SemicolonOperator
+ObjectIdentifier "d"
+ColonOperator
+TypeIdentifier "Object"
+AssignmentOperator
+ObjectIdentifier "printh"
+LeftParenthesesOperator
+RightParenthesesOperator
+SemicolonOperator
+RightCurlyBracesOperator
+SemicolonOperator
+ClassKeyword
+TypeIdentifier "Razz"
+InheritsKeyword
+TypeIdentifier "Foo"
+LeftCurlyBracesOperator
+ObjectIdentifier "e"
+ColonOperator
+TypeIdentifier "Bar"
+AssignmentOperator
+CaseKeyword
+ObjectIdentifier "self"
+OfKeyword
+ObjectIdentifier "n"
+ColonOperator
+TypeIdentifier "Razz"
+TypeBoundOperator
+LeftParenthesesOperator
+NewKeyword
+TypeIdentifier "Bar"
+RightParenthesesOperator
+SemicolonOperator
+ObjectIdentifier "n"
+ColonOperator
+TypeIdentifier "Bar"
+TypeBoundOperator
+ObjectIdentifier "n"
+SemicolonOperator
+EsacKeyword
+SemicolonOperator
+ObjectIdentifier "f"
+ColonOperator
+TypeIdentifier "Int"
+AssignmentOperator
+ObjectIdentifier "a"
+AtOperator
+TypeIdentifier "Bazz"
+PeriodOperator
+ObjectIdentifier "doh"
+LeftParenthesesOperator
+RightParenthesesOperator
+PlusOperator
+ObjectIdentifier "g"
+PeriodOperator
+ObjectIdentifier "doh"
+LeftParenthesesOperator
+RightParenthesesOperator
+PlusOperator
+ObjectIdentifier "e"
+PeriodOperator
+ObjectIdentifier "doh"
+LeftParenthesesOperator
+RightParenthesesOperator
+PlusOperator
+ObjectIdentifier "doh"
+LeftParenthesesOperator
+RightParenthesesOperator
+PlusOperator
+ObjectIdentifier "printh"
+LeftParenthesesOperator
+RightParenthesesOperator
+SemicolonOperator
+RightCurlyBracesOperator
+SemicolonOperator
+ClassKeyword
+TypeIdentifier "Bazz"
+InheritsKeyword
+TypeIdentifier "IO"
+LeftCurlyBracesOperator
+ObjectIdentifier "h"
+ColonOperator
+TypeIdentifier "Int"
+AssignmentOperator
+IntegerToken 1
+SemicolonOperator
+ObjectIdentifier "g"
+ColonOperator
+TypeIdentifier "Foo"
+AssignmentOperator
+CaseKeyword
+ObjectIdentifier "self"
+OfKeyword
+ObjectIdentifier "n"
+ColonOperator
+TypeIdentifier "Bazz"
+TypeBoundOperator
+LeftParenthesesOperator
+NewKeyword
+TypeIdentifier "Foo"
+RightParenthesesOperator
+SemicolonOperator
+ObjectIdentifier "n"
+ColonOperator
+TypeIdentifier "Razz"
+TypeBoundOperator
+LeftParenthesesOperator
+NewKeyword
+TypeIdentifier "Bar"
+RightParenthesesOperator
+SemicolonOperator
+ObjectIdentifier "n"
+ColonOperator
+TypeIdentifier "Foo"
+TypeBoundOperator
+LeftParenthesesOperator
+NewKeyword
+TypeIdentifier "Razz"
+RightParenthesesOperator
+SemicolonOperator
+ObjectIdentifier "n"
+ColonOperator
+TypeIdentifier "Bar"
+TypeBoundOperator
+ObjectIdentifier "n"
+SemicolonOperator
+EsacKeyword
+SemicolonOperator
+ObjectIdentifier "i"
+ColonOperator
+TypeIdentifier "Object"
+AssignmentOperator
+ObjectIdentifier "printh"
+LeftParenthesesOperator
+RightParenthesesOperator
+SemicolonOperator
+ObjectIdentifier "printh"
+LeftParenthesesOperator
+RightParenthesesOperator
+ColonOperator
+TypeIdentifier "Int"
+LeftCurlyBracesOperator
+LeftCurlyBracesOperator
+ObjectIdentifier "out_int"
+LeftParenthesesOperator
+ObjectIdentifier "h"
+RightParenthesesOperator
+SemicolonOperator
+IntegerToken 0
+SemicolonOperator
+RightCurlyBracesOperator
+RightCurlyBracesOperator
+SemicolonOperator
+ObjectIdentifier "doh"
+LeftParenthesesOperator
+RightParenthesesOperator
+ColonOperator
+TypeIdentifier "Int"
+LeftCurlyBracesOperator
+LeftParenthesesOperator
+LetKeyword
+ObjectIdentifier "i"
+ColonOperator
+TypeIdentifier "Int"
+AssignmentOperator
+ObjectIdentifier "h"
+InKeyword
+LeftCurlyBracesOperator
+ObjectIdentifier "h"
+AssignmentOperator
+ObjectIdentifier "h"
+PlusOperator
+IntegerToken 1
+SemicolonOperator
+ObjectIdentifier "i"
+SemicolonOperator
+RightCurlyBracesOperator
+RightParenthesesOperator
+RightCurlyBracesOperator
+SemicolonOperator
+RightCurlyBracesOperator
+SemicolonOperator
+ClassKeyword
+TypeIdentifier "Main"
+LeftCurlyBracesOperator
+ObjectIdentifier "a"
+ColonOperator
+TypeIdentifier "Bazz"
+AssignmentOperator
+NewKeyword
+TypeIdentifier "Bazz"
+SemicolonOperator
+ObjectIdentifier "b"
+ColonOperator
+TypeIdentifier "Foo"
+AssignmentOperator
+NewKeyword
+TypeIdentifier "Foo"
+SemicolonOperator
+ObjectIdentifier "c"
+ColonOperator
+TypeIdentifier "Razz"
+AssignmentOperator
+NewKeyword
+TypeIdentifier "Razz"
+SemicolonOperator
+ObjectIdentifier "d"
+ColonOperator
+TypeIdentifier "Bar"
+AssignmentOperator
+NewKeyword
+TypeIdentifier "Bar"
+SemicolonOperator
+ObjectIdentifier "main"
+LeftParenthesesOperator
+RightParenthesesOperator
+ColonOperator
+TypeIdentifier "String"
+LeftCurlyBracesOperator
+StringToken "do nothing"
+RightCurlyBracesOperator
+SemicolonOperator
+RightCurlyBracesOperator
+SemicolonOperator

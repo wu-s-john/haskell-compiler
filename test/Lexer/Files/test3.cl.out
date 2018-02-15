@@ -1,0 +1,4 @@
+StringToken "foo"
+StringToken "\b\t\n\f"
+StringToken "a\nb"
+StringToken "1\"2'3~4\"5"
