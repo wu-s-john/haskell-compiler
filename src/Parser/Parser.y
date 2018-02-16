@@ -21,8 +21,7 @@ import Parser.AST
       ')'             { RightParenthesesOperator }
 
 %left '+' '-'
-%left '*'
-%left '/'
+%left '*' '/'
 %%
 
 Exp :: { Expression }

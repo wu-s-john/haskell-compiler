@@ -98,7 +98,7 @@ stringOperatorMap = M.fromList [
  , ("+", PlusOperator)
  , ("-", MinusOperator)
  , ("*", TimesOperator)
- , ("\\", DivideOperator)
+ , ("/", DivideOperator)
  , ("=>", TypeBoundOperator)
   ]
 

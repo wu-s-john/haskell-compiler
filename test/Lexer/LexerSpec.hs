@@ -127,6 +127,8 @@ spec =
             , TypeIdentifier "Nil"
             , RightParenthesesOperator
             ]
+        it "should parser division" $
+          testScanner "6 / 2" [IntegerToken 6, DivideOperator, IntegerToken 2]
         it "should parse a method invoked in a class" $
           "f(foo: String, bar: String): String { foo + bar };\n" `runAlex` scanner `shouldBe`
           (Right $

@@ -17,7 +17,7 @@ $alphaNumeric = [a-zA-Z0-9] -- alphanumeric characters
 @string = [^\"\n] | \\\" | \\\n
 @typeIdentifier = [A-Z] @validIdentifier*
 @objectIdentifier = [a-z] @validIdentifier*
-@reservedOps = "[" | "]" | "{" | "}" | "(" |  ")" | "<" | "<="| "<-" | "=" | ":" | ";" | "." | "," | "@" | "~" | "+"| "-"| "*"| "\\"| "=>"
+@reservedOps = "[" | "]" | "{" | "}" | "(" |  ")" | "<" | "<="| "<-" | "=" | ":" | ";" | "." | "," | "@" | "~" | "+"| "-"| "*"| "/"| "=>"
 
 tokens :-
 
