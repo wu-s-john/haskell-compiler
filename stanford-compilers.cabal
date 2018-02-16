@@ -21,6 +21,9 @@ library
                      , Lexer.Token
                      , Lexer.TokenUtil
                      , Lexer.LexerUtil
+                     , Parser.AST
+                     , Parser.Parser
+                     , Parser.ParserUtil
   build-depends:       base >= 4.7 && < 5
                      , parsec
                      , lens
@@ -36,7 +39,8 @@ executable stanford-compilers
   build-depends:       base
                      , stanford-compilers
   default-language:    Haskell2010
-  build-tools: alex
+  build-tools:         alex
+                     , happy
 
 test-suite stanford-compilers-test
   type:                exitcode-stdio-1.0

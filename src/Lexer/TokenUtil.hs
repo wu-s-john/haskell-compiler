@@ -2,7 +2,7 @@
 
 module Lexer.TokenUtil where
 
-import Data.List (isInfixOf, intercalate)
+import Data.List (isInfixOf)
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Char (toLower)

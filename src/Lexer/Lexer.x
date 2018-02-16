@@ -24,9 +24,7 @@ tokens :-
   <0> $white+				;
   <0> "--".*				;
   <0> "*)"				    { toSingularToken UnmatchedCommentToken }
-  <0> "(*"                  { begin comment }
-  <comment> .               { skip  }
-  <comment> "*)"            { begin 0 }
+  <0> "(*" .* "*)"          ;
   <0> @reservedOps          { toParameterizedToken toOperator }
   <0> [0-9]+			    { toParameterizedToken (IntegerToken . read) }
   <0> @typeIdentifier       { toParameterizedToken (treatKeyword TypeIdentifier) }

@@ -27,29 +27,27 @@ spec =
              case alexScan (alexStartPos, '\n', [], string) 0 of
                AlexError _ -> False
                _ -> True)
-      it "should match with the first 0" $ runAlex "000 abc" alexMonadScan `shouldBe` (Right $ IntegerToken 0)
-      it "should identify integers" $ runAlex "100000" alexMonadScan `shouldBe` (Right $ IntegerToken 100000)
-      it "should identify type identifiers" $ runAlex "Foo" alexMonadScan `shouldBe` (Right $ TypeIdentifier "Foo")
-      it "should identify object identifiers" $ runAlex "bar" alexMonadScan `shouldBe` (Right $ ObjectIdentifier "bar")
-      it "should identifiers with underscore" $
-        runAlex "foo_bar" alexMonadScan `shouldBe` (Right $ ObjectIdentifier "foo_bar")
+      it "should match with the first 0" $ testIndividualToken "000 abc" (IntegerToken 0)
+      it "should identify integers" $ testIndividualToken "100000" (IntegerToken 100000)
+      it "should identify type identifiers" $ testIndividualToken "Foo" (TypeIdentifier "Foo")
+      it "should identify object identifiers" $ testIndividualToken "bar" (ObjectIdentifier "bar")
+      it "should identifiers with underscore" $ testIndividualToken "foo_bar" (ObjectIdentifier "foo_bar")
       describe "keywords" $ do
-        it "should identify keywords" $ runAlex "let" alexMonadScan `shouldBe` Right LetKeyword
-        it "should identify insensitive keywords" $ runAlex "cASe" alexMonadScan `shouldBe` Right CaseKeyword
-        it "should treat True as a type" $ runAlex "TRue" alexMonadScan `shouldBe` (Right $ TypeIdentifier "TRue")
-        it "should treat Let as a keyword" $ runAlex "Let" alexMonadScan `shouldBe` Right LetKeyword
+        it "should identify keywords" $ testIndividualToken "let" LetKeyword
+        it "should identify insensitive keywords" $ testIndividualToken "cASe" CaseKeyword
+        it "should treat True as a type" $ testIndividualToken "TRue" (TypeIdentifier "TRue")
+        it "should treat Let as a keyword" $ testIndividualToken "Let" LetKeyword
       describe "operators" $ do
-        it "should parse ( operator" $ runAlex "(" alexMonadScan `shouldBe` Right LeftParenthesesOperator
-        it "should parse [ operator" $ runAlex "[" alexMonadScan `shouldBe` Right LeftBracesOperator
+        it "should parse ( operator" $ testIndividualToken "(" LeftParenthesesOperator
+        it "should parse [ operator" $ testIndividualToken "[" LeftBracesOperator
       describe "string" $ do
         it "should identify string identifiers" $
-          runAlex "\"hello\"" alexMonadScan `shouldBe` (Right $ StringToken "hello")
+          testIndividualToken "\"hello\"" (StringToken "hello")
         describe "unterminated strings" $ do
           it "should identify unterminated strings" $
-            runAlex "\"this is \n not okay\"" alexMonadScan `shouldBe` Right UnterminatedStringErrorToken
+            testIndividualToken "\"this is \n not okay\"" UnterminatedStringErrorToken
           it "should identify untermianted strings" $
-            runAlex "\"hello\nstring is unterminated\"\n" scanner `shouldBe`
-            Right
+            testScanner "\"hello\nstring is unterminated\"\n"
               [ UnterminatedStringErrorToken
               , ObjectIdentifier "string"
               , ObjectIdentifier "is"
@@ -65,19 +63,19 @@ spec =
         it "can parse inner quotes" $ toStringToken "\"1\\\"2'3~4\\\"5\"" `shouldBe` StringToken "1\"2'3~4\"5"
         it "can parse inner quotes" $
           runAlex "\"1\\\"2'3~4\\\"5\"" alexMonadScan `shouldBe` (Right $ StringToken "1\"2'3~4\"5")
-        it "cannot parse eof" $ runAlex "\"foo" alexMonadScan `shouldBe` Right EOFStringErrorToken
+        it "cannot parse eof" $ testIndividualToken "\"foo" EOFStringErrorToken
       describe "comments" $ do
         describe "-- " $ do
           it "should be ignored" $ runAlex "-- foo" testDidSkipped `shouldBe` Right True
           it "should ignore comments but parse the next value" $
-            runAlex "-- foo \n foo" alexMonadScan `shouldBe` (Right $ ObjectIdentifier "foo")
+            testIndividualToken "-- foo \n foo" (ObjectIdentifier "foo")
         describe "(* *)" $ do
           it "should throw an error if it sees an unmatched token" $
-            runAlex "*)" alexMonadScan `shouldBe` Right UnmatchedCommentToken
+            testIndividualToken "*)" UnmatchedCommentToken
           it "should have an opening and a closing statement" $
-            runAlex "(* foo *) hi" alexMonadScan `shouldBe` (Right $ ObjectIdentifier "hi")
+            testIndividualToken "(* foo *) hi" (ObjectIdentifier "hi")
           it "should have an opening and a closing statement" $
-            runAlex "(* foo *) hi" alexMonadScan `shouldBe` (Right $ ObjectIdentifier "hi")
+            testIndividualToken "(* foo *) hi" (ObjectIdentifier "hi")
 --          it "should be able to parse a multiline comment" $ -- todo make sure to deal with multiple parenthesis
 --            runAlex
 --              "(* models one-dimensional cellular automaton on a circle of finite radius\n   arrays are faked as Strings,\n   X's respresent live cells, dots represent dead cells,\n   no error checking is done *)\n"
@@ -85,9 +83,8 @@ spec =
 --            Right True
     describe "integration tests" $ do
       it "should have alexMonadScan parse only one token at a time" $
-        runAlex "Foo Bar" alexMonadScan `shouldBe` (Right $ TypeIdentifier "Foo")
-      it "should have scanner parse an item" $
-        runAlex "Foo Bar" scanner `shouldBe` Right [TypeIdentifier "Foo", TypeIdentifier "Bar"]
+        testIndividualToken "Foo Bar" (TypeIdentifier "Foo")
+      it "should have scanner parse an item" $ testScanner "Foo Bar" [TypeIdentifier "Foo", TypeIdentifier "Bar"]
       describe "class" $ do
         it "should parse a class (simple example)" $
           testScanner
@@ -227,8 +224,14 @@ spec =
       it "can parse an entire program" $
         testScanFile scanner "test/Lexer/Files/test4.cl" "test/Lexer/Files/test4.cl.out"
 
+testAlex :: Show a => Eq a  => Alex a -> String -> a -> Expectation
+testAlex alexScanner code expectedTokens = code `runAlex` alexScanner `shouldBe` Right expectedTokens
+
+testIndividualToken :: String -> Token -> Expectation
+testIndividualToken = testAlex alexMonadScan
+
 testScanner :: String -> [Token] -> Expectation
-testScanner code expectedTokens = code `runAlex` scanner `shouldBe` Right expectedTokens
+testScanner = testAlex scanner
 
 testDidSkipped :: Alex Bool
 testDidSkipped = do
