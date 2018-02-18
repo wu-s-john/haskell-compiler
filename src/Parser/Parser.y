@@ -20,14 +20,29 @@ import Data.Maybe
       '/'             { DivideOperator }
       '('             { LeftParenthesesOperator }
       ')'             { RightParenthesesOperator }
+      '{'             { LeftCurlyBracesOperator }
+      '}'             { RightCurlyBracesOperator }
       ':'             { ColonOperator }
       '<-'            { AssignmentOperator }
+      ';'             { SemicolonOperator}
+      'class'         { ClassKeyword }
+      'inherits'        { InheritsKeyword }
       objectID        { ObjectIdentifier $$ }
       typeID          { TypeIdentifier $$ }
 
 %left '+' '-'
 %left '*' '/'
 %%
+
+class :: { Class }
+class :
+        'class' typeID '{' feats '}'    {OrphanedClass (Type $2) $4 }
+      | 'class' typeID  'inherits' typeID '{' feats '}'    {InheritedClass (Type $2) (Type $4) $6 }
+
+feats :: { [Feature] }
+feats :
+        {- empty -}               { [] }
+      | feat ';' feats     { $1 : $3 }
 
 feat :: { Feature }
 feat :

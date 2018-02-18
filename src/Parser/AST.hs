@@ -9,10 +9,15 @@ data BinaryOp =
   PlusExp
 
 data Expression =
-  BinaryOp {getOp :: Token, getLeft :: Expression, getRight :: Expression}
+    BinaryOp {getOp :: Token, getLeft :: Expression, getRight :: Expression}
   | UnaryOp {getOp :: Token, getExpr :: Expression}
   | IntegerExpr Int
   | IdentifierExpr String
+  deriving (Show, Read, Eq)
+
+data Class =
+    OrphanedClass {getClassName :: Type, getFeatures :: [Feature]}
+  | InheritedClass {getClassName :: Type, getInheritName :: Type, getFeatures :: [Feature]}
   deriving (Show, Read, Eq)
 
 newtype Identifier = Identifier String deriving (Show, Read, Eq)
