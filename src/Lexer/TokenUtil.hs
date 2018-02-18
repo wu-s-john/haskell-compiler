@@ -32,15 +32,15 @@ convertSpecialEscapeCharacters [] = []
 toStringToken :: String -> Token
 toStringToken string =
   case throwNullCharacterToken $ removeFirstLast string of
-    NullCharacterErrorToken -> NullCharacterErrorToken
-    StringToken processedString -> StringToken $ convertSpecialEscapeCharacters processedString
+    NullCharacterError -> NullCharacterError
+    StringLiteral processedString -> StringLiteral $ convertSpecialEscapeCharacters processedString
     _ -> error "Could not match token to a corresponding string Token"
 
 throwNullCharacterToken :: String -> Token
 throwNullCharacterToken string =
   if "\\0" `isInfixOf` string
-    then NullCharacterErrorToken
-    else StringToken string
+    then NullCharacterError
+    else StringLiteral string
 
 stringKeywordMap :: Map String Token
 stringKeywordMap = M.fromList [

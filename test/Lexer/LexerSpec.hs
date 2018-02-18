@@ -27,8 +27,8 @@ spec =
              case alexScan (alexStartPos, '\n', [], string) 0 of
                AlexError _ -> False
                _ -> True)
-      it "should match with the first 0" $ testIndividualToken "000 abc" (IntegerToken 0)
-      it "should identify integers" $ testIndividualToken "100000" (IntegerToken 100000)
+      it "should match with the first 0" $ testIndividualToken "000 abc" (IntegerLiteral 0)
+      it "should identify integers" $ testIndividualToken "100000" (IntegerLiteral 100000)
       it "should identify type identifiers" $ testIndividualToken "Foo" (TypeIdentifier "Foo")
       it "should identify object identifiers" $ testIndividualToken "bar" (ObjectIdentifier "bar")
       it "should identifiers with underscore" $ testIndividualToken "foo_bar" (ObjectIdentifier "foo_bar")
@@ -42,28 +42,28 @@ spec =
         it "should parse [ operator" $ testIndividualToken "[" LeftBracesOperator
       describe "string" $ do
         it "should identify string identifiers" $
-          testIndividualToken "\"hello\"" (StringToken "hello")
+          testIndividualToken "\"hello\"" (StringLiteral "hello")
         describe "unterminated strings" $ do
           it "should identify unterminated strings" $
-            testIndividualToken "\"this is \n not okay\"" UnterminatedStringErrorToken
+            testIndividualToken "\"this is \n not okay\"" UnterminatedStringError
           it "should identify untermianted strings" $
             testScanner "\"hello\nstring is unterminated\"\n"
-              [ UnterminatedStringErrorToken
+              [ UnterminatedStringError
               , ObjectIdentifier "string"
               , ObjectIdentifier "is"
               , ObjectIdentifier "unterminated"
-              , UnterminatedStringErrorToken
+              , UnterminatedStringError
               ]
         it "can contain escaped newline character" $
-          toStringToken "\"this is \\n okay\"" `shouldBe` StringToken "this is \n okay"
-        it "can contain escaped newline character 2" $ toStringToken "\"a\\\nb\"" `shouldBe` StringToken "a\nb"
-        it "can parse escape characters" $ toStringToken "\"\\b\\t\\n\\f\"" `shouldBe` StringToken "\b\t\n\f"
-        it "can treat most escape characters as regular characters" $ toStringToken "\"\\c\"" `shouldBe` StringToken "c"
-        it "cannot contain null characters" $ toStringToken "\" foo\\0ooo \"" `shouldBe` NullCharacterErrorToken
-        it "can parse inner quotes" $ toStringToken "\"1\\\"2'3~4\\\"5\"" `shouldBe` StringToken "1\"2'3~4\"5"
+          toStringToken "\"this is \\n okay\"" `shouldBe` StringLiteral "this is \n okay"
+        it "can contain escaped newline character 2" $ toStringToken "\"a\\\nb\"" `shouldBe` StringLiteral "a\nb"
+        it "can parse escape characters" $ toStringToken "\"\\b\\t\\n\\f\"" `shouldBe` StringLiteral "\b\t\n\f"
+        it "can treat most escape characters as regular characters" $ toStringToken "\"\\c\"" `shouldBe` StringLiteral "c"
+        it "cannot contain null characters" $ toStringToken "\" foo\\0ooo \"" `shouldBe` NullCharacterError
+        it "can parse inner quotes" $ toStringToken "\"1\\\"2'3~4\\\"5\"" `shouldBe` StringLiteral "1\"2'3~4\"5"
         it "can parse inner quotes" $
-          runAlex "\"1\\\"2'3~4\\\"5\"" alexMonadScan `shouldBe` (Right $ StringToken "1\"2'3~4\"5")
-        it "cannot parse eof" $ testIndividualToken "\"foo" EOFStringErrorToken
+          runAlex "\"1\\\"2'3~4\\\"5\"" alexMonadScan `shouldBe` (Right $ StringLiteral "1\"2'3~4\"5")
+        it "cannot parse eof" $ testIndividualToken "\"foo" EOFStringError
       describe "comments" $ do
         describe "-- " $ do
           it "should be ignored" $ runAlex "-- foo" testDidSkipped `shouldBe` Right True
@@ -71,7 +71,7 @@ spec =
             testIndividualToken "-- foo \n foo" (ObjectIdentifier "foo")
         describe "(* *)" $ do
           it "should throw an error if it sees an unmatched token" $
-            testIndividualToken "*)" UnmatchedCommentToken
+            testIndividualToken "*)" UnmatchedComment
           it "should have an opening and a closing statement" $
             testIndividualToken "(* foo *) hi" (ObjectIdentifier "hi")
           it "should have an opening and a closing statement" $
@@ -121,14 +121,14 @@ spec =
             , PeriodOperator
             , ObjectIdentifier "init"
             , LeftParenthesesOperator
-            , IntegerToken 1
+            , IntegerLiteral 1
             , CommaOperator
             , NewKeyword
             , TypeIdentifier "Nil"
             , RightParenthesesOperator
             ]
         it "should parser division" $
-          testScanner "6 / 2" [IntegerToken 6, DivideOperator, IntegerToken 2]
+          testScanner "6 / 2" [IntegerLiteral 6, DivideOperator, IntegerLiteral 2]
         it "should parse a method invoked in a class" $
           "f(foo: String, bar: String): String { foo + bar };\n" `runAlex` scanner `shouldBe`
           (Right $
@@ -171,7 +171,7 @@ spec =
         it "should parse an assignment" $
           testScanner
             "xcar: Int <- 1;"
-            (createAssignment "xcar" "Int" ++ [AssignmentOperator, IntegerToken 1, SemicolonOperator])
+            (createAssignment "xcar" "Int" ++ [AssignmentOperator, IntegerLiteral 1, SemicolonOperator])
         it "should parse an if else statement" $
           testScanner
             "if foo then bar else baz fi"
@@ -189,13 +189,13 @@ spec =
             [ WhileKeyword
             , ObjectIdentifier "x"
             , LessThanOrEqualOperator
-            , IntegerToken 10
+            , IntegerLiteral 10
             , LoopKeyword
             , ObjectIdentifier "x"
             , AssignmentOperator
             , ObjectIdentifier "x"
             , MinusOperator
-            , IntegerToken 1
+            , IntegerLiteral 1
             , PoolKeyword
             ]
         it "should parse a let statement" $
@@ -203,7 +203,7 @@ spec =
             "let x : Integer <- 1; y: Integer in x + y"
             ([LetKeyword] ++
              createAssignment "x" "Integer" ++
-             [AssignmentOperator, IntegerToken 1, SemicolonOperator] ++
+             [AssignmentOperator, IntegerLiteral 1, SemicolonOperator] ++
              createAssignment "y" "Integer" ++ [InKeyword, ObjectIdentifier "x", PlusOperator, ObjectIdentifier "y"])
         let createTypeBound variableName typeName tokens =
               createAssignment variableName typeName ++ [TypeBoundOperator] ++ tokens ++ [SemicolonOperator]

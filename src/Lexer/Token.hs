@@ -2,15 +2,13 @@ module Lexer.Token
   ( Token(..)
   ) where
 
+
 data Token
   =
-    StringToken String
-  | IntegerToken Int
+    StringLiteral String
+  | IntegerLiteral Int
   | TypeIdentifier String
   | ObjectIdentifier String
-  -- special
-  | SelfToken
-  | SELF_TYPE_TOKEN
   -- keywords
   | ClassKeyword
   | InheritsKeyword
@@ -54,13 +52,13 @@ data Token
   | AtOperator
   | TildeOperator
   -- eof
-  | EOFToken
+  | EOF
   -- error
   -- -- strings
-  | InvalidCharacterErrorToken Char
-  | UnterminatedStringErrorToken
-  | EOFStringErrorToken
-  | NullCharacterErrorToken
+  | InvalidCharacterError Char
+  | UnterminatedStringError
+  | EOFStringError
+  | NullCharacterError
   -- -- comments
-  | UnmatchedCommentToken
+  | UnmatchedComment
   deriving (Eq, Show, Read)

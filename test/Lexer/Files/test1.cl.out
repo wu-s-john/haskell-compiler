@@ -1,6 +1,6 @@
-IntegerToken 0
-IntegerToken 1
-IntegerToken 2
-IntegerToken 3
-IntegerToken 4
-IntegerToken 5
+IntegerLiteral 0
+IntegerLiteral 1
+IntegerLiteral 2
+IntegerLiteral 3
+IntegerLiteral 4
+IntegerLiteral 5

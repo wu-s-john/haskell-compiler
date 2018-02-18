@@ -3,6 +3,6 @@ ObjectIdentifier "is"
 NotKeyword
 TypeIdentifier "C"
 ColonOperator
-IntegerToken 0
+IntegerLiteral 0
 ObjectIdentifier "xabc"
-IntegerToken 987
+IntegerLiteral 987

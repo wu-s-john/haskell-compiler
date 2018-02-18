@@ -4,6 +4,7 @@ import Data.Char
 import Lexer.Token
 import Parser.AST
 import Data.Maybe
+import Data.List
 }
 
 
@@ -13,7 +14,7 @@ import Data.Maybe
 
 
 %token
-      int             { IntegerToken $$ }
+      int             { IntegerLiteral $$ }
       '+'             { PlusOperator }
       '-'             { MinusOperator }
       '*'             { TimesOperator }
@@ -64,6 +65,6 @@ expr  :
 
 {
 parseError :: [Token] -> a
-parseError _ = error "Parse error"
+parseError tokens = error ("Parse error: Remaining Tokens " ++  (intercalate ";" (map show tokens)))
 
 }

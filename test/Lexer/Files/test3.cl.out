@@ -1,4 +1,4 @@
-StringToken "foo"
-StringToken "\b\t\n\f"
-StringToken "a\nb"
-StringToken "1\"2'3~4\"5"
+StringLiteral "foo"
+StringLiteral "\b\t\n\f"
+StringLiteral "a\nb"
+StringLiteral "1\"2'3~4\"5"

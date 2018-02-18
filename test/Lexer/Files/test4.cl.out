@@ -79,7 +79,7 @@ ObjectIdentifier "h"
 AssignmentOperator
 ObjectIdentifier "h"
 PlusOperator
-IntegerToken 2
+IntegerLiteral 2
 SemicolonOperator
 ObjectIdentifier "i"
 SemicolonOperator
@@ -184,7 +184,7 @@ ObjectIdentifier "h"
 ColonOperator
 TypeIdentifier "Int"
 AssignmentOperator
-IntegerToken 1
+IntegerLiteral 1
 SemicolonOperator
 ObjectIdentifier "g"
 ColonOperator
@@ -248,7 +248,7 @@ LeftParenthesesOperator
 ObjectIdentifier "h"
 RightParenthesesOperator
 SemicolonOperator
-IntegerToken 0
+IntegerLiteral 0
 SemicolonOperator
 RightCurlyBracesOperator
 RightCurlyBracesOperator
@@ -272,7 +272,7 @@ ObjectIdentifier "h"
 AssignmentOperator
 ObjectIdentifier "h"
 PlusOperator
-IntegerToken 1
+IntegerLiteral 1
 SemicolonOperator
 ObjectIdentifier "i"
 SemicolonOperator
@@ -319,7 +319,7 @@ RightParenthesesOperator
 ColonOperator
 TypeIdentifier "String"
 LeftCurlyBracesOperator
-StringToken "do nothing"
+StringLiteral "do nothing"
 RightCurlyBracesOperator
 SemicolonOperator
 RightCurlyBracesOperator
