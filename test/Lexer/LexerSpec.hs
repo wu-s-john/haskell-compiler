@@ -5,6 +5,7 @@ module Lexer.LexerSpec
   , spec
   ) where
 
+import Data.Either (fromRight)
 import Test.Hspec
        (Expectation, Spec, describe, hspec, it, shouldBe)
 import Test.QuickCheck
@@ -41,28 +42,26 @@ spec =
         it "should parse ( operator" $ testIndividualToken "(" LeftParenthesesOperator
         it "should parse [ operator" $ testIndividualToken "[" LeftBracesOperator
       describe "string" $ do
-        it "should identify string identifiers" $
-          testIndividualToken "\"hello\"" (StringLiteral "hello")
+        it "should identify string identifiers" $ testIndividualToken "\"hello\"" (StringLiteral "hello")
         describe "unterminated strings" $ do
           it "should identify unterminated strings" $
             testIndividualToken "\"this is \n not okay\"" UnterminatedStringError
           it "should identify untermianted strings" $
-            testScanner "\"hello\nstring is unterminated\"\n"
+            testScanner
+              "\"hello\nstring is unterminated\"\n"
               [ UnterminatedStringError
               , ObjectIdentifier "string"
               , ObjectIdentifier "is"
               , ObjectIdentifier "unterminated"
               , UnterminatedStringError
               ]
-        it "can contain escaped newline character" $
-          toStringToken "\"this is \\n okay\"" `shouldBe` StringLiteral "this is \n okay"
-        it "can contain escaped newline character 2" $ toStringToken "\"a\\\nb\"" `shouldBe` StringLiteral "a\nb"
-        it "can parse escape characters" $ toStringToken "\"\\b\\t\\n\\f\"" `shouldBe` StringLiteral "\b\t\n\f"
-        it "can treat most escape characters as regular characters" $ toStringToken "\"\\c\"" `shouldBe` StringLiteral "c"
-        it "cannot contain null characters" $ toStringToken "\" foo\\0ooo \"" `shouldBe` NullCharacterError
-        it "can parse inner quotes" $ toStringToken "\"1\\\"2'3~4\\\"5\"" `shouldBe` StringLiteral "1\"2'3~4\"5"
-        it "can parse inner quotes" $
-          runAlex "\"1\\\"2'3~4\\\"5\"" alexMonadScan `shouldBe` (Right $ StringLiteral "1\"2'3~4\"5")
+        it "can contain escaped newline character" $ testStringToken "\"this is \\n okay\"" (StringLiteral "this is \n okay")
+        it "can contain escaped newline character 2" $ testStringToken "\"a\\\nb\"" (StringLiteral "a\nb")
+        it "can parse escape characters" $ testStringToken "\"\\b\\t\\n\\f\"" (StringLiteral "\b\t\n\f")
+        it "can treat most escape characters as regular characters" $ testStringToken "\"\\c\"" (StringLiteral "c")
+        it "cannot contain null characters" $ testStringToken "\" foo\\0ooo \"" NullCharacterError
+        it "can parse inner quotes" $ testStringToken "\"1\\\"2'3~4\\\"5\"" (StringLiteral "1\"2'3~4\"5")
+        it "can parse inner quotes" $ testIndividualToken "\"1\\\"2'3~4\\\"5\"" (StringLiteral "1\"2'3~4\"5")
         it "cannot parse eof" $ testIndividualToken "\"foo" EOFStringError
       describe "comments" $ do
         describe "-- " $ do
@@ -70,17 +69,11 @@ spec =
           it "should ignore comments but parse the next value" $
             testIndividualToken "-- foo \n foo" (ObjectIdentifier "foo")
         describe "(* *)" $ do
-          it "should throw an error if it sees an unmatched token" $
-            testIndividualToken "*)" UnmatchedComment
+          it "should throw an error if it sees an unmatched token" $ testIndividualToken "*)" UnmatchedComment
           it "should have an opening and a closing statement" $
             testIndividualToken "(* foo *) hi" (ObjectIdentifier "hi")
           it "should have an opening and a closing statement" $
             testIndividualToken "(* foo *) hi" (ObjectIdentifier "hi")
---          it "should be able to parse a multiline comment" $ -- todo make sure to deal with multiple parenthesis
---            runAlex
---              "(* models one-dimensional cellular automaton on a circle of finite radius\n   arrays are faked as Strings,\n   X's respresent live cells, dots represent dead cells,\n   no error checking is done *)\n"
---              testDidSkipped `shouldBe`
---            Right True
     describe "integration tests" $ do
       it "should have alexMonadScan parse only one token at a time" $
         testIndividualToken "Foo Bar" (TypeIdentifier "Foo")
@@ -127,25 +120,24 @@ spec =
             , TypeIdentifier "Nil"
             , RightParenthesesOperator
             ]
-        it "should parser division" $
-          testScanner "6 / 2" [IntegerLiteral 6, DivideOperator, IntegerLiteral 2]
+        it "should parser division" $ testScanner "6 / 2" [IntegerLiteral 6, DivideOperator, IntegerLiteral 2]
         it "should parse a method invoked in a class" $
-          "f(foo: String, bar: String): String { foo + bar };\n" `runAlex` scanner `shouldBe`
-          (Right $
-           [ObjectIdentifier "f", LeftParenthesesOperator] ++
-           createAssignment "foo" "String" ++
-           [CommaOperator] ++
-           createAssignment "bar" "String" ++
-           [ RightParenthesesOperator
-           , ColonOperator
-           , TypeIdentifier "String"
-           , LeftCurlyBracesOperator
-           , ObjectIdentifier "foo"
-           , PlusOperator
-           , ObjectIdentifier "bar"
-           , RightCurlyBracesOperator
-           , SemicolonOperator
-           ])
+          testScanner
+            "f(foo: String, bar: String): String { foo + bar };\n"
+            ([ObjectIdentifier "f", LeftParenthesesOperator] ++
+             createAssignment "foo" "String" ++
+             [CommaOperator] ++
+             createAssignment "bar" "String" ++
+             [ RightParenthesesOperator
+             , ColonOperator
+             , TypeIdentifier "String"
+             , LeftCurlyBracesOperator
+             , ObjectIdentifier "foo"
+             , PlusOperator
+             , ObjectIdentifier "bar"
+             , RightCurlyBracesOperator
+             , SemicolonOperator
+             ])
         it "should parse a method call from an object" $
           testScanner
             "e0.f(e1)"
@@ -226,14 +218,31 @@ spec =
       it "can parse an entire program" $
         testScanFile scanner "test/Lexer/Files/test4.cl" "test/Lexer/Files/test4.cl.out"
 
-testAlex :: Show a => Eq a  => Alex a -> String -> a -> Expectation
-testAlex alexScanner code expectedTokens = code `runAlex` alexScanner `shouldBe` Right expectedTokens
+--          it "should be able to parse a multiline comment" $ -- todo make sure to deal with multiple parenthesis
+--            runAlex
+--              "(* models one-dimensional cellular automaton on a circle of finite radius\n   arrays are faked as Strings,\n   X's respresent live cells, dots represent dead cells,\n   no error checking is done *)\n"
+--              testDidSkipped `shouldBe`
+--            Right True
 
-testIndividualToken :: String -> Token -> Expectation
-testIndividualToken = testAlex alexMonadScan
 
-testScanner :: String -> [Token] -> Expectation
-testScanner = testAlex scanner
+testIndividualToken :: String -> (Position -> Token) -> Expectation
+testIndividualToken code positionToToken =
+  let (Right extractedToken) = code `runAlex` alexMonadScan
+  in extractedToken `shouldBe` positionToToken (getPosition extractedToken)
+
+testScanner :: String -> [Position -> Token] -> Expectation
+testScanner code expectedPosToTokens =
+  let (Right extractedTokens) = code `runAlex` scanner
+  in extractedTokens `shouldBe`
+     zipWith
+       (\extractedToken expectedPosToToken -> expectedPosToToken (getPosition extractedToken))
+       extractedTokens
+       expectedPosToTokens
+
+testStringToken :: String -> (Position -> Token) -> Expectation
+testStringToken string posToTokenTransform =
+  toStringToken string (Position 1 1) `shouldBe` posToTokenTransform (Position 1 1)
+
 
 testDidSkipped :: Alex Bool
 testDidSkipped = do

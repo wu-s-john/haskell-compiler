@@ -1,326 +1,326 @@
-ClassKeyword
-TypeIdentifier "Foo"
-InheritsKeyword
-TypeIdentifier "Bazz"
-LeftCurlyBracesOperator
-ObjectIdentifier "a"
-ColonOperator
-TypeIdentifier "Razz"
-AssignmentOperator
-CaseKeyword
-ObjectIdentifier "self"
-OfKeyword
-ObjectIdentifier "n"
-ColonOperator
-TypeIdentifier "Razz"
-TypeBoundOperator
-LeftParenthesesOperator
-NewKeyword
-TypeIdentifier "Bar"
-RightParenthesesOperator
-SemicolonOperator
-ObjectIdentifier "n"
-ColonOperator
-TypeIdentifier "Foo"
-TypeBoundOperator
-LeftParenthesesOperator
-NewKeyword
-TypeIdentifier "Razz"
-RightParenthesesOperator
-SemicolonOperator
-ObjectIdentifier "n"
-ColonOperator
-TypeIdentifier "Bar"
-TypeBoundOperator
-ObjectIdentifier "n"
-SemicolonOperator
-EsacKeyword
-SemicolonOperator
-ObjectIdentifier "b"
-ColonOperator
-TypeIdentifier "Int"
-AssignmentOperator
-ObjectIdentifier "a"
-PeriodOperator
-ObjectIdentifier "doh"
-LeftParenthesesOperator
-RightParenthesesOperator
-PlusOperator
-ObjectIdentifier "g"
-PeriodOperator
-ObjectIdentifier "doh"
-LeftParenthesesOperator
-RightParenthesesOperator
-PlusOperator
-ObjectIdentifier "doh"
-LeftParenthesesOperator
-RightParenthesesOperator
-PlusOperator
-ObjectIdentifier "printh"
-LeftParenthesesOperator
-RightParenthesesOperator
-SemicolonOperator
-ObjectIdentifier "doh"
-LeftParenthesesOperator
-RightParenthesesOperator
-ColonOperator
-TypeIdentifier "Int"
-LeftCurlyBracesOperator
-LeftParenthesesOperator
-LetKeyword
-ObjectIdentifier "i"
-ColonOperator
-TypeIdentifier "Int"
-AssignmentOperator
-ObjectIdentifier "h"
-InKeyword
-LeftCurlyBracesOperator
-ObjectIdentifier "h"
-AssignmentOperator
-ObjectIdentifier "h"
-PlusOperator
-IntegerLiteral 2
-SemicolonOperator
-ObjectIdentifier "i"
-SemicolonOperator
-RightCurlyBracesOperator
-RightParenthesesOperator
-RightCurlyBracesOperator
-SemicolonOperator
-RightCurlyBracesOperator
-SemicolonOperator
-ClassKeyword
-TypeIdentifier "Bar"
-InheritsKeyword
-TypeIdentifier "Razz"
-LeftCurlyBracesOperator
-ObjectIdentifier "c"
-ColonOperator
-TypeIdentifier "Int"
-AssignmentOperator
-ObjectIdentifier "doh"
-LeftParenthesesOperator
-RightParenthesesOperator
-SemicolonOperator
-ObjectIdentifier "d"
-ColonOperator
-TypeIdentifier "Object"
-AssignmentOperator
-ObjectIdentifier "printh"
-LeftParenthesesOperator
-RightParenthesesOperator
-SemicolonOperator
-RightCurlyBracesOperator
-SemicolonOperator
-ClassKeyword
-TypeIdentifier "Razz"
-InheritsKeyword
-TypeIdentifier "Foo"
-LeftCurlyBracesOperator
-ObjectIdentifier "e"
-ColonOperator
-TypeIdentifier "Bar"
-AssignmentOperator
-CaseKeyword
-ObjectIdentifier "self"
-OfKeyword
-ObjectIdentifier "n"
-ColonOperator
-TypeIdentifier "Razz"
-TypeBoundOperator
-LeftParenthesesOperator
-NewKeyword
-TypeIdentifier "Bar"
-RightParenthesesOperator
-SemicolonOperator
-ObjectIdentifier "n"
-ColonOperator
-TypeIdentifier "Bar"
-TypeBoundOperator
-ObjectIdentifier "n"
-SemicolonOperator
-EsacKeyword
-SemicolonOperator
-ObjectIdentifier "f"
-ColonOperator
-TypeIdentifier "Int"
-AssignmentOperator
-ObjectIdentifier "a"
-AtOperator
-TypeIdentifier "Bazz"
-PeriodOperator
-ObjectIdentifier "doh"
-LeftParenthesesOperator
-RightParenthesesOperator
-PlusOperator
-ObjectIdentifier "g"
-PeriodOperator
-ObjectIdentifier "doh"
-LeftParenthesesOperator
-RightParenthesesOperator
-PlusOperator
-ObjectIdentifier "e"
-PeriodOperator
-ObjectIdentifier "doh"
-LeftParenthesesOperator
-RightParenthesesOperator
-PlusOperator
-ObjectIdentifier "doh"
-LeftParenthesesOperator
-RightParenthesesOperator
-PlusOperator
-ObjectIdentifier "printh"
-LeftParenthesesOperator
-RightParenthesesOperator
-SemicolonOperator
-RightCurlyBracesOperator
-SemicolonOperator
-ClassKeyword
-TypeIdentifier "Bazz"
-InheritsKeyword
-TypeIdentifier "IO"
-LeftCurlyBracesOperator
-ObjectIdentifier "h"
-ColonOperator
-TypeIdentifier "Int"
-AssignmentOperator
-IntegerLiteral 1
-SemicolonOperator
-ObjectIdentifier "g"
-ColonOperator
-TypeIdentifier "Foo"
-AssignmentOperator
-CaseKeyword
-ObjectIdentifier "self"
-OfKeyword
-ObjectIdentifier "n"
-ColonOperator
-TypeIdentifier "Bazz"
-TypeBoundOperator
-LeftParenthesesOperator
-NewKeyword
-TypeIdentifier "Foo"
-RightParenthesesOperator
-SemicolonOperator
-ObjectIdentifier "n"
-ColonOperator
-TypeIdentifier "Razz"
-TypeBoundOperator
-LeftParenthesesOperator
-NewKeyword
-TypeIdentifier "Bar"
-RightParenthesesOperator
-SemicolonOperator
-ObjectIdentifier "n"
-ColonOperator
-TypeIdentifier "Foo"
-TypeBoundOperator
-LeftParenthesesOperator
-NewKeyword
-TypeIdentifier "Razz"
-RightParenthesesOperator
-SemicolonOperator
-ObjectIdentifier "n"
-ColonOperator
-TypeIdentifier "Bar"
-TypeBoundOperator
-ObjectIdentifier "n"
-SemicolonOperator
-EsacKeyword
-SemicolonOperator
-ObjectIdentifier "i"
-ColonOperator
-TypeIdentifier "Object"
-AssignmentOperator
-ObjectIdentifier "printh"
-LeftParenthesesOperator
-RightParenthesesOperator
-SemicolonOperator
-ObjectIdentifier "printh"
-LeftParenthesesOperator
-RightParenthesesOperator
-ColonOperator
-TypeIdentifier "Int"
-LeftCurlyBracesOperator
-LeftCurlyBracesOperator
-ObjectIdentifier "out_int"
-LeftParenthesesOperator
-ObjectIdentifier "h"
-RightParenthesesOperator
-SemicolonOperator
-IntegerLiteral 0
-SemicolonOperator
-RightCurlyBracesOperator
-RightCurlyBracesOperator
-SemicolonOperator
-ObjectIdentifier "doh"
-LeftParenthesesOperator
-RightParenthesesOperator
-ColonOperator
-TypeIdentifier "Int"
-LeftCurlyBracesOperator
-LeftParenthesesOperator
-LetKeyword
-ObjectIdentifier "i"
-ColonOperator
-TypeIdentifier "Int"
-AssignmentOperator
-ObjectIdentifier "h"
-InKeyword
-LeftCurlyBracesOperator
-ObjectIdentifier "h"
-AssignmentOperator
-ObjectIdentifier "h"
-PlusOperator
-IntegerLiteral 1
-SemicolonOperator
-ObjectIdentifier "i"
-SemicolonOperator
-RightCurlyBracesOperator
-RightParenthesesOperator
-RightCurlyBracesOperator
-SemicolonOperator
-RightCurlyBracesOperator
-SemicolonOperator
-ClassKeyword
-TypeIdentifier "Main"
-LeftCurlyBracesOperator
-ObjectIdentifier "a"
-ColonOperator
-TypeIdentifier "Bazz"
-AssignmentOperator
-NewKeyword
-TypeIdentifier "Bazz"
-SemicolonOperator
-ObjectIdentifier "b"
-ColonOperator
-TypeIdentifier "Foo"
-AssignmentOperator
-NewKeyword
-TypeIdentifier "Foo"
-SemicolonOperator
-ObjectIdentifier "c"
-ColonOperator
-TypeIdentifier "Razz"
-AssignmentOperator
-NewKeyword
-TypeIdentifier "Razz"
-SemicolonOperator
-ObjectIdentifier "d"
-ColonOperator
-TypeIdentifier "Bar"
-AssignmentOperator
-NewKeyword
-TypeIdentifier "Bar"
-SemicolonOperator
-ObjectIdentifier "main"
-LeftParenthesesOperator
-RightParenthesesOperator
-ColonOperator
-TypeIdentifier "String"
-LeftCurlyBracesOperator
-StringLiteral "do nothing"
-RightCurlyBracesOperator
-SemicolonOperator
-RightCurlyBracesOperator
-SemicolonOperator
+ClassKeyword {getPosition = Position {getLine = 4, getCol = 1}}
+TypeIdentifier {getName = "Foo", getPosition = Position {getLine = 4, getCol = 7}}
+InheritsKeyword {getPosition = Position {getLine = 4, getCol = 11}}
+TypeIdentifier {getName = "Bazz", getPosition = Position {getLine = 4, getCol = 20}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 4, getCol = 25}}
+ObjectIdentifier {getName = "a", getPosition = Position {getLine = 5, getCol = 6}}
+ColonOperator {getPosition = Position {getLine = 5, getCol = 8}}
+TypeIdentifier {getName = "Razz", getPosition = Position {getLine = 5, getCol = 10}}
+AssignmentOperator {getPosition = Position {getLine = 5, getCol = 15}}
+CaseKeyword {getPosition = Position {getLine = 5, getCol = 18}}
+ObjectIdentifier {getName = "self", getPosition = Position {getLine = 5, getCol = 23}}
+OfKeyword {getPosition = Position {getLine = 5, getCol = 28}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 6, getCol = 23}}
+ColonOperator {getPosition = Position {getLine = 6, getCol = 25}}
+TypeIdentifier {getName = "Razz", getPosition = Position {getLine = 6, getCol = 27}}
+TypeBoundOperator {getPosition = Position {getLine = 6, getCol = 32}}
+LeftParenthesesOperator {getPosition = Position {getLine = 6, getCol = 35}}
+NewKeyword {getPosition = Position {getLine = 6, getCol = 36}}
+TypeIdentifier {getName = "Bar", getPosition = Position {getLine = 6, getCol = 40}}
+RightParenthesesOperator {getPosition = Position {getLine = 6, getCol = 43}}
+SemicolonOperator {getPosition = Position {getLine = 6, getCol = 44}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 7, getCol = 23}}
+ColonOperator {getPosition = Position {getLine = 7, getCol = 25}}
+TypeIdentifier {getName = "Foo", getPosition = Position {getLine = 7, getCol = 27}}
+TypeBoundOperator {getPosition = Position {getLine = 7, getCol = 31}}
+LeftParenthesesOperator {getPosition = Position {getLine = 7, getCol = 34}}
+NewKeyword {getPosition = Position {getLine = 7, getCol = 35}}
+TypeIdentifier {getName = "Razz", getPosition = Position {getLine = 7, getCol = 39}}
+RightParenthesesOperator {getPosition = Position {getLine = 7, getCol = 43}}
+SemicolonOperator {getPosition = Position {getLine = 7, getCol = 44}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 8, getCol = 23}}
+ColonOperator {getPosition = Position {getLine = 8, getCol = 25}}
+TypeIdentifier {getName = "Bar", getPosition = Position {getLine = 8, getCol = 27}}
+TypeBoundOperator {getPosition = Position {getLine = 8, getCol = 31}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 8, getCol = 34}}
+SemicolonOperator {getPosition = Position {getLine = 8, getCol = 35}}
+EsacKeyword {getPosition = Position {getLine = 9, getCol = 18}}
+SemicolonOperator {getPosition = Position {getLine = 9, getCol = 22}}
+ObjectIdentifier {getName = "b", getPosition = Position {getLine = 11, getCol = 6}}
+ColonOperator {getPosition = Position {getLine = 11, getCol = 8}}
+TypeIdentifier {getName = "Int", getPosition = Position {getLine = 11, getCol = 10}}
+AssignmentOperator {getPosition = Position {getLine = 11, getCol = 14}}
+ObjectIdentifier {getName = "a", getPosition = Position {getLine = 11, getCol = 17}}
+PeriodOperator {getPosition = Position {getLine = 11, getCol = 18}}
+ObjectIdentifier {getName = "doh", getPosition = Position {getLine = 11, getCol = 19}}
+LeftParenthesesOperator {getPosition = Position {getLine = 11, getCol = 22}}
+RightParenthesesOperator {getPosition = Position {getLine = 11, getCol = 23}}
+PlusOperator {getPosition = Position {getLine = 11, getCol = 25}}
+ObjectIdentifier {getName = "g", getPosition = Position {getLine = 11, getCol = 27}}
+PeriodOperator {getPosition = Position {getLine = 11, getCol = 28}}
+ObjectIdentifier {getName = "doh", getPosition = Position {getLine = 11, getCol = 29}}
+LeftParenthesesOperator {getPosition = Position {getLine = 11, getCol = 32}}
+RightParenthesesOperator {getPosition = Position {getLine = 11, getCol = 33}}
+PlusOperator {getPosition = Position {getLine = 11, getCol = 35}}
+ObjectIdentifier {getName = "doh", getPosition = Position {getLine = 11, getCol = 37}}
+LeftParenthesesOperator {getPosition = Position {getLine = 11, getCol = 40}}
+RightParenthesesOperator {getPosition = Position {getLine = 11, getCol = 41}}
+PlusOperator {getPosition = Position {getLine = 11, getCol = 43}}
+ObjectIdentifier {getName = "printh", getPosition = Position {getLine = 11, getCol = 45}}
+LeftParenthesesOperator {getPosition = Position {getLine = 11, getCol = 51}}
+RightParenthesesOperator {getPosition = Position {getLine = 11, getCol = 52}}
+SemicolonOperator {getPosition = Position {getLine = 11, getCol = 53}}
+ObjectIdentifier {getName = "doh", getPosition = Position {getLine = 13, getCol = 6}}
+LeftParenthesesOperator {getPosition = Position {getLine = 13, getCol = 9}}
+RightParenthesesOperator {getPosition = Position {getLine = 13, getCol = 10}}
+ColonOperator {getPosition = Position {getLine = 13, getCol = 12}}
+TypeIdentifier {getName = "Int", getPosition = Position {getLine = 13, getCol = 14}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 13, getCol = 18}}
+LeftParenthesesOperator {getPosition = Position {getLine = 13, getCol = 20}}
+LetKeyword {getPosition = Position {getLine = 13, getCol = 21}}
+ObjectIdentifier {getName = "i", getPosition = Position {getLine = 13, getCol = 25}}
+ColonOperator {getPosition = Position {getLine = 13, getCol = 27}}
+TypeIdentifier {getName = "Int", getPosition = Position {getLine = 13, getCol = 29}}
+AssignmentOperator {getPosition = Position {getLine = 13, getCol = 33}}
+ObjectIdentifier {getName = "h", getPosition = Position {getLine = 13, getCol = 36}}
+InKeyword {getPosition = Position {getLine = 13, getCol = 38}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 13, getCol = 41}}
+ObjectIdentifier {getName = "h", getPosition = Position {getLine = 13, getCol = 43}}
+AssignmentOperator {getPosition = Position {getLine = 13, getCol = 45}}
+ObjectIdentifier {getName = "h", getPosition = Position {getLine = 13, getCol = 48}}
+PlusOperator {getPosition = Position {getLine = 13, getCol = 50}}
+IntegerLiteral {getValue = 2, getPosition = Position {getLine = 13, getCol = 52}}
+SemicolonOperator {getPosition = Position {getLine = 13, getCol = 53}}
+ObjectIdentifier {getName = "i", getPosition = Position {getLine = 13, getCol = 55}}
+SemicolonOperator {getPosition = Position {getLine = 13, getCol = 56}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 13, getCol = 58}}
+RightParenthesesOperator {getPosition = Position {getLine = 13, getCol = 60}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 13, getCol = 62}}
+SemicolonOperator {getPosition = Position {getLine = 13, getCol = 63}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 15, getCol = 1}}
+SemicolonOperator {getPosition = Position {getLine = 15, getCol = 2}}
+ClassKeyword {getPosition = Position {getLine = 17, getCol = 1}}
+TypeIdentifier {getName = "Bar", getPosition = Position {getLine = 17, getCol = 7}}
+InheritsKeyword {getPosition = Position {getLine = 17, getCol = 11}}
+TypeIdentifier {getName = "Razz", getPosition = Position {getLine = 17, getCol = 20}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 17, getCol = 25}}
+ObjectIdentifier {getName = "c", getPosition = Position {getLine = 19, getCol = 6}}
+ColonOperator {getPosition = Position {getLine = 19, getCol = 8}}
+TypeIdentifier {getName = "Int", getPosition = Position {getLine = 19, getCol = 10}}
+AssignmentOperator {getPosition = Position {getLine = 19, getCol = 14}}
+ObjectIdentifier {getName = "doh", getPosition = Position {getLine = 19, getCol = 17}}
+LeftParenthesesOperator {getPosition = Position {getLine = 19, getCol = 20}}
+RightParenthesesOperator {getPosition = Position {getLine = 19, getCol = 21}}
+SemicolonOperator {getPosition = Position {getLine = 19, getCol = 22}}
+ObjectIdentifier {getName = "d", getPosition = Position {getLine = 21, getCol = 6}}
+ColonOperator {getPosition = Position {getLine = 21, getCol = 8}}
+TypeIdentifier {getName = "Object", getPosition = Position {getLine = 21, getCol = 10}}
+AssignmentOperator {getPosition = Position {getLine = 21, getCol = 17}}
+ObjectIdentifier {getName = "printh", getPosition = Position {getLine = 21, getCol = 20}}
+LeftParenthesesOperator {getPosition = Position {getLine = 21, getCol = 26}}
+RightParenthesesOperator {getPosition = Position {getLine = 21, getCol = 27}}
+SemicolonOperator {getPosition = Position {getLine = 21, getCol = 28}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 22, getCol = 1}}
+SemicolonOperator {getPosition = Position {getLine = 22, getCol = 2}}
+ClassKeyword {getPosition = Position {getLine = 25, getCol = 1}}
+TypeIdentifier {getName = "Razz", getPosition = Position {getLine = 25, getCol = 7}}
+InheritsKeyword {getPosition = Position {getLine = 25, getCol = 12}}
+TypeIdentifier {getName = "Foo", getPosition = Position {getLine = 25, getCol = 21}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 25, getCol = 25}}
+ObjectIdentifier {getName = "e", getPosition = Position {getLine = 27, getCol = 6}}
+ColonOperator {getPosition = Position {getLine = 27, getCol = 8}}
+TypeIdentifier {getName = "Bar", getPosition = Position {getLine = 27, getCol = 10}}
+AssignmentOperator {getPosition = Position {getLine = 27, getCol = 14}}
+CaseKeyword {getPosition = Position {getLine = 27, getCol = 17}}
+ObjectIdentifier {getName = "self", getPosition = Position {getLine = 27, getCol = 22}}
+OfKeyword {getPosition = Position {getLine = 27, getCol = 27}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 28, getCol = 19}}
+ColonOperator {getPosition = Position {getLine = 28, getCol = 21}}
+TypeIdentifier {getName = "Razz", getPosition = Position {getLine = 28, getCol = 23}}
+TypeBoundOperator {getPosition = Position {getLine = 28, getCol = 28}}
+LeftParenthesesOperator {getPosition = Position {getLine = 28, getCol = 31}}
+NewKeyword {getPosition = Position {getLine = 28, getCol = 32}}
+TypeIdentifier {getName = "Bar", getPosition = Position {getLine = 28, getCol = 36}}
+RightParenthesesOperator {getPosition = Position {getLine = 28, getCol = 39}}
+SemicolonOperator {getPosition = Position {getLine = 28, getCol = 40}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 29, getCol = 19}}
+ColonOperator {getPosition = Position {getLine = 29, getCol = 21}}
+TypeIdentifier {getName = "Bar", getPosition = Position {getLine = 29, getCol = 23}}
+TypeBoundOperator {getPosition = Position {getLine = 29, getCol = 27}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 29, getCol = 30}}
+SemicolonOperator {getPosition = Position {getLine = 29, getCol = 31}}
+EsacKeyword {getPosition = Position {getLine = 30, getCol = 17}}
+SemicolonOperator {getPosition = Position {getLine = 30, getCol = 21}}
+ObjectIdentifier {getName = "f", getPosition = Position {getLine = 32, getCol = 6}}
+ColonOperator {getPosition = Position {getLine = 32, getCol = 8}}
+TypeIdentifier {getName = "Int", getPosition = Position {getLine = 32, getCol = 10}}
+AssignmentOperator {getPosition = Position {getLine = 32, getCol = 14}}
+ObjectIdentifier {getName = "a", getPosition = Position {getLine = 32, getCol = 17}}
+AtOperator {getPosition = Position {getLine = 32, getCol = 18}}
+TypeIdentifier {getName = "Bazz", getPosition = Position {getLine = 32, getCol = 19}}
+PeriodOperator {getPosition = Position {getLine = 32, getCol = 23}}
+ObjectIdentifier {getName = "doh", getPosition = Position {getLine = 32, getCol = 24}}
+LeftParenthesesOperator {getPosition = Position {getLine = 32, getCol = 27}}
+RightParenthesesOperator {getPosition = Position {getLine = 32, getCol = 28}}
+PlusOperator {getPosition = Position {getLine = 32, getCol = 30}}
+ObjectIdentifier {getName = "g", getPosition = Position {getLine = 32, getCol = 32}}
+PeriodOperator {getPosition = Position {getLine = 32, getCol = 33}}
+ObjectIdentifier {getName = "doh", getPosition = Position {getLine = 32, getCol = 34}}
+LeftParenthesesOperator {getPosition = Position {getLine = 32, getCol = 37}}
+RightParenthesesOperator {getPosition = Position {getLine = 32, getCol = 38}}
+PlusOperator {getPosition = Position {getLine = 32, getCol = 40}}
+ObjectIdentifier {getName = "e", getPosition = Position {getLine = 32, getCol = 42}}
+PeriodOperator {getPosition = Position {getLine = 32, getCol = 43}}
+ObjectIdentifier {getName = "doh", getPosition = Position {getLine = 32, getCol = 44}}
+LeftParenthesesOperator {getPosition = Position {getLine = 32, getCol = 47}}
+RightParenthesesOperator {getPosition = Position {getLine = 32, getCol = 48}}
+PlusOperator {getPosition = Position {getLine = 32, getCol = 50}}
+ObjectIdentifier {getName = "doh", getPosition = Position {getLine = 32, getCol = 52}}
+LeftParenthesesOperator {getPosition = Position {getLine = 32, getCol = 55}}
+RightParenthesesOperator {getPosition = Position {getLine = 32, getCol = 56}}
+PlusOperator {getPosition = Position {getLine = 32, getCol = 58}}
+ObjectIdentifier {getName = "printh", getPosition = Position {getLine = 32, getCol = 60}}
+LeftParenthesesOperator {getPosition = Position {getLine = 32, getCol = 66}}
+RightParenthesesOperator {getPosition = Position {getLine = 32, getCol = 67}}
+SemicolonOperator {getPosition = Position {getLine = 32, getCol = 68}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 34, getCol = 1}}
+SemicolonOperator {getPosition = Position {getLine = 34, getCol = 2}}
+ClassKeyword {getPosition = Position {getLine = 36, getCol = 1}}
+TypeIdentifier {getName = "Bazz", getPosition = Position {getLine = 36, getCol = 7}}
+InheritsKeyword {getPosition = Position {getLine = 36, getCol = 12}}
+TypeIdentifier {getName = "IO", getPosition = Position {getLine = 36, getCol = 21}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 36, getCol = 24}}
+ObjectIdentifier {getName = "h", getPosition = Position {getLine = 38, getCol = 6}}
+ColonOperator {getPosition = Position {getLine = 38, getCol = 8}}
+TypeIdentifier {getName = "Int", getPosition = Position {getLine = 38, getCol = 10}}
+AssignmentOperator {getPosition = Position {getLine = 38, getCol = 14}}
+IntegerLiteral {getValue = 1, getPosition = Position {getLine = 38, getCol = 17}}
+SemicolonOperator {getPosition = Position {getLine = 38, getCol = 18}}
+ObjectIdentifier {getName = "g", getPosition = Position {getLine = 40, getCol = 6}}
+ColonOperator {getPosition = Position {getLine = 40, getCol = 8}}
+TypeIdentifier {getName = "Foo", getPosition = Position {getLine = 40, getCol = 10}}
+AssignmentOperator {getPosition = Position {getLine = 40, getCol = 15}}
+CaseKeyword {getPosition = Position {getLine = 40, getCol = 18}}
+ObjectIdentifier {getName = "self", getPosition = Position {getLine = 40, getCol = 23}}
+OfKeyword {getPosition = Position {getLine = 40, getCol = 28}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 41, getCol = 25}}
+ColonOperator {getPosition = Position {getLine = 41, getCol = 27}}
+TypeIdentifier {getName = "Bazz", getPosition = Position {getLine = 41, getCol = 29}}
+TypeBoundOperator {getPosition = Position {getLine = 41, getCol = 34}}
+LeftParenthesesOperator {getPosition = Position {getLine = 41, getCol = 37}}
+NewKeyword {getPosition = Position {getLine = 41, getCol = 38}}
+TypeIdentifier {getName = "Foo", getPosition = Position {getLine = 41, getCol = 42}}
+RightParenthesesOperator {getPosition = Position {getLine = 41, getCol = 45}}
+SemicolonOperator {getPosition = Position {getLine = 41, getCol = 46}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 42, getCol = 25}}
+ColonOperator {getPosition = Position {getLine = 42, getCol = 27}}
+TypeIdentifier {getName = "Razz", getPosition = Position {getLine = 42, getCol = 29}}
+TypeBoundOperator {getPosition = Position {getLine = 42, getCol = 34}}
+LeftParenthesesOperator {getPosition = Position {getLine = 42, getCol = 37}}
+NewKeyword {getPosition = Position {getLine = 42, getCol = 38}}
+TypeIdentifier {getName = "Bar", getPosition = Position {getLine = 42, getCol = 42}}
+RightParenthesesOperator {getPosition = Position {getLine = 42, getCol = 45}}
+SemicolonOperator {getPosition = Position {getLine = 42, getCol = 46}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 43, getCol = 25}}
+ColonOperator {getPosition = Position {getLine = 43, getCol = 27}}
+TypeIdentifier {getName = "Foo", getPosition = Position {getLine = 43, getCol = 29}}
+TypeBoundOperator {getPosition = Position {getLine = 43, getCol = 34}}
+LeftParenthesesOperator {getPosition = Position {getLine = 43, getCol = 37}}
+NewKeyword {getPosition = Position {getLine = 43, getCol = 38}}
+TypeIdentifier {getName = "Razz", getPosition = Position {getLine = 43, getCol = 42}}
+RightParenthesesOperator {getPosition = Position {getLine = 43, getCol = 46}}
+SemicolonOperator {getPosition = Position {getLine = 43, getCol = 47}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 44, getCol = 25}}
+ColonOperator {getPosition = Position {getLine = 44, getCol = 27}}
+TypeIdentifier {getName = "Bar", getPosition = Position {getLine = 44, getCol = 29}}
+TypeBoundOperator {getPosition = Position {getLine = 44, getCol = 33}}
+ObjectIdentifier {getName = "n", getPosition = Position {getLine = 44, getCol = 36}}
+SemicolonOperator {getPosition = Position {getLine = 44, getCol = 37}}
+EsacKeyword {getPosition = Position {getLine = 45, getCol = 19}}
+SemicolonOperator {getPosition = Position {getLine = 45, getCol = 23}}
+ObjectIdentifier {getName = "i", getPosition = Position {getLine = 47, getCol = 6}}
+ColonOperator {getPosition = Position {getLine = 47, getCol = 8}}
+TypeIdentifier {getName = "Object", getPosition = Position {getLine = 47, getCol = 10}}
+AssignmentOperator {getPosition = Position {getLine = 47, getCol = 17}}
+ObjectIdentifier {getName = "printh", getPosition = Position {getLine = 47, getCol = 20}}
+LeftParenthesesOperator {getPosition = Position {getLine = 47, getCol = 26}}
+RightParenthesesOperator {getPosition = Position {getLine = 47, getCol = 27}}
+SemicolonOperator {getPosition = Position {getLine = 47, getCol = 28}}
+ObjectIdentifier {getName = "printh", getPosition = Position {getLine = 49, getCol = 6}}
+LeftParenthesesOperator {getPosition = Position {getLine = 49, getCol = 12}}
+RightParenthesesOperator {getPosition = Position {getLine = 49, getCol = 13}}
+ColonOperator {getPosition = Position {getLine = 49, getCol = 15}}
+TypeIdentifier {getName = "Int", getPosition = Position {getLine = 49, getCol = 17}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 49, getCol = 21}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 49, getCol = 23}}
+ObjectIdentifier {getName = "out_int", getPosition = Position {getLine = 49, getCol = 25}}
+LeftParenthesesOperator {getPosition = Position {getLine = 49, getCol = 32}}
+ObjectIdentifier {getName = "h", getPosition = Position {getLine = 49, getCol = 33}}
+RightParenthesesOperator {getPosition = Position {getLine = 49, getCol = 34}}
+SemicolonOperator {getPosition = Position {getLine = 49, getCol = 35}}
+IntegerLiteral {getValue = 0, getPosition = Position {getLine = 49, getCol = 37}}
+SemicolonOperator {getPosition = Position {getLine = 49, getCol = 38}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 49, getCol = 40}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 49, getCol = 42}}
+SemicolonOperator {getPosition = Position {getLine = 49, getCol = 43}}
+ObjectIdentifier {getName = "doh", getPosition = Position {getLine = 51, getCol = 6}}
+LeftParenthesesOperator {getPosition = Position {getLine = 51, getCol = 9}}
+RightParenthesesOperator {getPosition = Position {getLine = 51, getCol = 10}}
+ColonOperator {getPosition = Position {getLine = 51, getCol = 12}}
+TypeIdentifier {getName = "Int", getPosition = Position {getLine = 51, getCol = 14}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 51, getCol = 18}}
+LeftParenthesesOperator {getPosition = Position {getLine = 51, getCol = 20}}
+LetKeyword {getPosition = Position {getLine = 51, getCol = 21}}
+ObjectIdentifier {getName = "i", getPosition = Position {getLine = 51, getCol = 25}}
+ColonOperator {getPosition = Position {getLine = 51, getCol = 26}}
+TypeIdentifier {getName = "Int", getPosition = Position {getLine = 51, getCol = 28}}
+AssignmentOperator {getPosition = Position {getLine = 51, getCol = 32}}
+ObjectIdentifier {getName = "h", getPosition = Position {getLine = 51, getCol = 35}}
+InKeyword {getPosition = Position {getLine = 51, getCol = 37}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 51, getCol = 40}}
+ObjectIdentifier {getName = "h", getPosition = Position {getLine = 51, getCol = 42}}
+AssignmentOperator {getPosition = Position {getLine = 51, getCol = 44}}
+ObjectIdentifier {getName = "h", getPosition = Position {getLine = 51, getCol = 47}}
+PlusOperator {getPosition = Position {getLine = 51, getCol = 49}}
+IntegerLiteral {getValue = 1, getPosition = Position {getLine = 51, getCol = 51}}
+SemicolonOperator {getPosition = Position {getLine = 51, getCol = 52}}
+ObjectIdentifier {getName = "i", getPosition = Position {getLine = 51, getCol = 54}}
+SemicolonOperator {getPosition = Position {getLine = 51, getCol = 55}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 51, getCol = 57}}
+RightParenthesesOperator {getPosition = Position {getLine = 51, getCol = 59}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 51, getCol = 61}}
+SemicolonOperator {getPosition = Position {getLine = 51, getCol = 62}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 52, getCol = 1}}
+SemicolonOperator {getPosition = Position {getLine = 52, getCol = 2}}
+ClassKeyword {getPosition = Position {getLine = 55, getCol = 1}}
+TypeIdentifier {getName = "Main", getPosition = Position {getLine = 55, getCol = 7}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 55, getCol = 12}}
+ObjectIdentifier {getName = "a", getPosition = Position {getLine = 56, getCol = 3}}
+ColonOperator {getPosition = Position {getLine = 56, getCol = 5}}
+TypeIdentifier {getName = "Bazz", getPosition = Position {getLine = 56, getCol = 7}}
+AssignmentOperator {getPosition = Position {getLine = 56, getCol = 12}}
+NewKeyword {getPosition = Position {getLine = 56, getCol = 15}}
+TypeIdentifier {getName = "Bazz", getPosition = Position {getLine = 56, getCol = 19}}
+SemicolonOperator {getPosition = Position {getLine = 56, getCol = 23}}
+ObjectIdentifier {getName = "b", getPosition = Position {getLine = 57, getCol = 3}}
+ColonOperator {getPosition = Position {getLine = 57, getCol = 5}}
+TypeIdentifier {getName = "Foo", getPosition = Position {getLine = 57, getCol = 7}}
+AssignmentOperator {getPosition = Position {getLine = 57, getCol = 11}}
+NewKeyword {getPosition = Position {getLine = 57, getCol = 14}}
+TypeIdentifier {getName = "Foo", getPosition = Position {getLine = 57, getCol = 18}}
+SemicolonOperator {getPosition = Position {getLine = 57, getCol = 21}}
+ObjectIdentifier {getName = "c", getPosition = Position {getLine = 58, getCol = 3}}
+ColonOperator {getPosition = Position {getLine = 58, getCol = 5}}
+TypeIdentifier {getName = "Razz", getPosition = Position {getLine = 58, getCol = 7}}
+AssignmentOperator {getPosition = Position {getLine = 58, getCol = 12}}
+NewKeyword {getPosition = Position {getLine = 58, getCol = 15}}
+TypeIdentifier {getName = "Razz", getPosition = Position {getLine = 58, getCol = 19}}
+SemicolonOperator {getPosition = Position {getLine = 58, getCol = 23}}
+ObjectIdentifier {getName = "d", getPosition = Position {getLine = 59, getCol = 3}}
+ColonOperator {getPosition = Position {getLine = 59, getCol = 5}}
+TypeIdentifier {getName = "Bar", getPosition = Position {getLine = 59, getCol = 7}}
+AssignmentOperator {getPosition = Position {getLine = 59, getCol = 11}}
+NewKeyword {getPosition = Position {getLine = 59, getCol = 14}}
+TypeIdentifier {getName = "Bar", getPosition = Position {getLine = 59, getCol = 18}}
+SemicolonOperator {getPosition = Position {getLine = 59, getCol = 21}}
+ObjectIdentifier {getName = "main", getPosition = Position {getLine = 61, getCol = 3}}
+LeftParenthesesOperator {getPosition = Position {getLine = 61, getCol = 7}}
+RightParenthesesOperator {getPosition = Position {getLine = 61, getCol = 8}}
+ColonOperator {getPosition = Position {getLine = 61, getCol = 9}}
+TypeIdentifier {getName = "String", getPosition = Position {getLine = 61, getCol = 11}}
+LeftCurlyBracesOperator {getPosition = Position {getLine = 61, getCol = 18}}
+StringLiteral {getStrVal = "do nothing", getPosition = Position {getLine = 61, getCol = 20}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 61, getCol = 33}}
+SemicolonOperator {getPosition = Position {getLine = 61, getCol = 34}}
+RightCurlyBracesOperator {getPosition = Position {getLine = 63, getCol = 1}}
+SemicolonOperator {getPosition = Position {getLine = 63, getCol = 2}}

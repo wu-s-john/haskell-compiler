@@ -3,13 +3,11 @@
 module Parser.AST where
 
 import Lexer.Token
+import Parser.TerminalNode
 
-
-data BinaryOp =
-  PlusExp
 
 data Expression =
-    BinaryOp {getOp :: Token, getLeft :: Expression, getRight :: Expression}
+    BinaryOp {getBinaryOp :: BinaryOpTerminal, getLeft :: Expression, getRight :: Expression}
   | UnaryOp {getOp :: Token, getExpr :: Expression}
   | IntegerExpr Int
   | IdentifierExpr String

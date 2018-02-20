@@ -36,29 +36,22 @@ tokens :-
 
   <0> .                     { toParameterizedToken (InvalidCharacterError . head) }
 {
--- Each action has type :: String -> Token
 
-toParameterizedToken :: (String -> Token) -> AlexInput -> Int -> Alex Token
-toParameterizedToken tokenFactory (_, _, _, str) len = let stringToken = take len str in
-                                                       return $ tokenFactory stringToken\
+toParameterizedToken :: (String -> Position -> Token) -> AlexInput -> Int -> Alex Token
+toParameterizedToken tokenFactory ((AlexPn _ lineNumber colNumber), _, _, str) len = let stringToken = take len str in
+                                                       return (tokenFactory stringToken (Position lineNumber colNumber))
 
-toSingularToken :: Token -> AlexInput -> Int -> Alex Token
-toSingularToken token _ _ = return token
+toSingularToken :: (Position -> Token) -> AlexInput -> Int -> Alex Token
+toSingularToken posTokenCB ((AlexPn _ lineNumber colNumber), _, _, _) _ = return (posTokenCB (Position lineNumber colNumber))
 
 -- The token type:
 
 scanner :: Alex [Token]
 scanner = do
     token <- alexMonadScan
-    if token == EOF
-       then return []
-       else do subresult <- scanner; return (token : subresult);
+    case token of
+        EOF ->  return []
+        _ -> do subresult <- scanner; return (token : subresult)
 
-identifyEOF :: user -> AlexInput -> Int -> AlexInput -> Bool
-identifyEOF _ _ _ (_, _, _, after) =
-  case after of
-    []       -> True  -- end-of-file
-    _        -> False
-
-alexEOF = return EOF
+alexEOF = return $ EOF-- todo get the size fo file
 }

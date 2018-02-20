@@ -1,6 +1,6 @@
-IntegerLiteral 0
-IntegerLiteral 1
-IntegerLiteral 2
-IntegerLiteral 3
-IntegerLiteral 4
-IntegerLiteral 5
+IntegerLiteral {getValue = 0, getPosition = Position {getLine = 2, getCol = 1}}
+IntegerLiteral {getValue = 1, getPosition = Position {getLine = 4, getCol = 1}}
+IntegerLiteral {getValue = 2, getPosition = Position {getLine = 6, getCol = 1}}
+IntegerLiteral {getValue = 3, getPosition = Position {getLine = 8, getCol = 1}}
+IntegerLiteral {getValue = 4, getPosition = Position {getLine = 10, getCol = 1}}
+IntegerLiteral {getValue = 5, getPosition = Position {getLine = 12, getCol = 1}}

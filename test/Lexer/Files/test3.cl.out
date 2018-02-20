@@ -1,4 +1,4 @@
-StringLiteral "foo"
-StringLiteral "\b\t\n\f"
-StringLiteral "a\nb"
-StringLiteral "1\"2'3~4\"5"
+StringLiteral {getStrVal = "foo", getPosition = Position {getLine = 2, getCol = 1}}
+StringLiteral {getStrVal = "\b\t\n\f", getPosition = Position {getLine = 3, getCol = 1}}
+StringLiteral {getStrVal = "a\nb", getPosition = Position {getLine = 4, getCol = 1}}
+StringLiteral {getStrVal = "1\"2'3~4\"5", getPosition = Position {getLine = 6, getCol = 1}}

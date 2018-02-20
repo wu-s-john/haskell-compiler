@@ -1,8 +1,8 @@
-TypeIdentifier "Cool"
-ObjectIdentifier "is"
-NotKeyword
-TypeIdentifier "C"
-ColonOperator
-IntegerLiteral 0
-ObjectIdentifier "xabc"
-IntegerLiteral 987
+TypeIdentifier {getName = "Cool", getPosition = Position {getLine = 1, getCol = 1}}
+ObjectIdentifier {getName = "is", getPosition = Position {getLine = 1, getCol = 6}}
+NotKeyword {getPosition = Position {getLine = 1, getCol = 9}}
+TypeIdentifier {getName = "C", getPosition = Position {getLine = 1, getCol = 13}}
+ColonOperator {getPosition = Position {getLine = 1, getCol = 14}}
+IntegerLiteral {getValue = 0, getPosition = Position {getLine = 3, getCol = 1}}
+ObjectIdentifier {getName = "xabc", getPosition = Position {getLine = 3, getCol = 2}}
+IntegerLiteral {getValue = 987, getPosition = Position {getLine = 4, getCol = 1}}

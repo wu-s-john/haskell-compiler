@@ -7,7 +7,7 @@ import Data.List (find)
 import Parser.AST
 import Lexer.Lexer (runAlex, scanner)
 import Lexer.Token
-import Parser.Parser (coolParser)
+import Parser.Parser (classParser)
 
 scanErrors :: [Token] -> [Token]
 scanErrors tokens =
@@ -15,13 +15,13 @@ scanErrors tokens =
     Just errorToken -> error $ "Found error token" ++ show errorToken
     Nothing -> tokens
   where
-    classifyErrorToken (InvalidCharacterError _) = True
-    classifyErrorToken UnterminatedStringError = True
-    classifyErrorToken EOFStringError = True
-    classifyErrorToken NullCharacterError = True
+    classifyErrorToken (InvalidCharacterError _ _) = True
+    classifyErrorToken (UnterminatedStringError _) = True
+    classifyErrorToken (EOFStringError _) = True
+    classifyErrorToken (NullCharacterError _) = True
     classifyErrorToken _ = False
 
-parseCode :: String -> Class
-parseCode code = coolParser $
+stringToAST :: ([Token] -> a) -> String -> a
+stringToAST parser code = parser $
   case code `runAlex` scanner of
     Right tokens -> tokens

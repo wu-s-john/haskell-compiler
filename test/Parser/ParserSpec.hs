@@ -5,10 +5,10 @@ module Parser.ParserSpec
   , spec
   ) where
 
-import Data.Maybe (fromJust)
-import Lexer.Token
 import Parser.AST
 import Parser.ParserUtil
+import Parser.TerminalNode
+import Parser.Parser (classParser, featureParser, expressionParser, featuresParser)
 import Test.Hspec
        (Expectation, Spec, describe, hspec, it, shouldBe)
 
@@ -22,27 +22,21 @@ spec =
     describe "expressions" $ do
       it "should parse a binary expression" $
         "1 + 2 * 5" `testExpression`
-        BinaryOp PlusOperator (IntegerExpr 1) (BinaryOp TimesOperator (IntegerExpr 2) (IntegerExpr 5))
-      it "should parse division" $ "6 / 2" `testExpression` BinaryOp DivideOperator (IntegerExpr 6) (IntegerExpr 2)
+        BinaryOp PlusTerminal (IntegerExpr 1) (BinaryOp TimesTerminal (IntegerExpr 2) (IntegerExpr 5))
+      it "should parse division" $ "6 / 2" `testExpression` BinaryOp DivideTerminal (IntegerExpr 6) (IntegerExpr 2)
       it "should parse an identifier expression" $ "foo" `testExpression` IdentifierExpr "foo"
     describe "features" $ do
       it "should parse a feature" $ testFeature "foo : Foo" $ Attribute (Identifier "foo") (Type "Foo") Nothing
       it "should parse a feature assigned to an expression" $
         testFeature "foo : Foo <- bar" $ Attribute (Identifier "foo") (Type "Foo") (Just (IdentifierExpr "bar"))
+      it "should parse a multiple features" $
+        testParser (stringToAST featuresParser) "foo : Foo <- bar;\n    x : Y;\n"
+         [Attribute (Identifier "foo") (Type "Foo") (Just (IdentifierExpr "bar")), Attribute (Identifier "foo") (Type "Foo") Nothing]
     describe "class" $ do
-      it "should parse an orphaned class" $ parseCode "class Foo {\n\n}\n" `shouldBe` OrphanedClass (Type "Foo") []
+      it "should parse an orphaned class" $ testClass "class Foo {\n\n}\n" (OrphanedClass (Type "Foo") [])
       it "should parse an inherited class" $
-        parseCode "class Foo inherits Bar {\n\n}\n" `shouldBe` InheritedClass (Type "Foo") (Type "Bar") []
+        testClass "class Foo inherits Bar {\n\n}\n" (InheritedClass (Type "Foo") (Type "Bar") [])
 
-parseFeature :: String -> Feature
-parseFeature code =
-  let classNode = parseCode $ "class Foo {\n" ++ code ++ ";\n}\n"
-  in head $ getFeatures classNode
-
-parseExpression :: String -> Expression
-parseExpression code =
-  let featureNode = parseFeature $ "foo : Foo <- " ++ code
-  in fromJust (getFeatExpr featureNode)
 
 testParser ::
      Show a
@@ -50,8 +44,11 @@ testParser ::
        (String -> a) -> String -> a -> Expectation
 testParser parser code expectedResult = parser code `shouldBe` expectedResult
 
+testClass :: String -> Class -> Expectation
+testClass = testParser (stringToAST classParser)
+
 testFeature :: String -> Feature -> Expectation
-testFeature = testParser parseFeature
+testFeature = testParser (stringToAST featureParser)
 
 testExpression :: String -> Expression -> Expectation
-testExpression = testParser parseExpression
+testExpression = testParser (stringToAST expressionParser)
