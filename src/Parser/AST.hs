@@ -8,9 +8,11 @@ import Parser.TerminalNode
 
 data Expression =
     BinaryOp {getBinaryOp :: BinaryOpTerminal, getLeft :: Expression, getRight :: Expression}
-  | UnaryOp {getOp :: Token, getExpr :: Expression}
+  | UnaryOp {getUnaryOp :: Token, getExpr :: Expression}
   | IntegerExpr Int
   | IdentifierExpr String
+  | BlockExpression [Expression]
+  | ExpressionError
   deriving (Show, Read, Eq)
 
 data Class =

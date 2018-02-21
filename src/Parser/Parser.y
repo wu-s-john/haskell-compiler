@@ -57,6 +57,10 @@ opt_expr :: {Maybe Expression}
 opt_expr : {- empty -}            { Nothing }
          | '<-' expr              { Just $2 }
 
+exprs :: { [Expression] }
+exprs : expr ';'                  { [$1] }
+      | exprs expr ';'            { $1 ++ [$2] }
+
 expr :: { Expression }
 expr  :
         expr '+' expr           { BinaryOp PlusTerminal $1 $3 }
@@ -66,6 +70,7 @@ expr  :
       | int                     { IntegerExpr (T.getValue $1) }
       | objectID                { IdentifierExpr (T.getName $1) }
       | '(' expr ')'            { $2 }
+      | '{' exprs '}'           { BlockExpression $2 }
 
 {
 parseError :: [T.Token] -> a
