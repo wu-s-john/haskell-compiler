@@ -2,17 +2,16 @@
 
 module Parser.AST where
 
-import Lexer.Token
 import Parser.TerminalNode
 
 
 data Expression =
     BinaryOp {getBinaryOp :: BinaryOpTerminal, getLeft :: Expression, getRight :: Expression}
-  | UnaryOp {getUnaryOp :: Token, getExpr :: Expression}
+  | UnaryOp {getUnaryOp :: UnaryOpTerminal, getExpr :: Expression}
   | IntegerExpr Int
   | IdentifierExpr String
   | BlockExpression [Expression]
-  | ExpressionError
+  | AssignmentExpression {getLeft :: Expression, getRight :: Expression}
   deriving (Show, Read, Eq)
 
 data Class =

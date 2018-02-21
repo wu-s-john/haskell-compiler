@@ -23,6 +23,9 @@ import Parser.TerminalNode
       '-'             { T.MinusOperator {} }
       '*'             { T.TimesOperator {} }
       '/'             { T.DivideOperator {} }
+      '<'             { T.LessThanOperator {} }
+      '<='            { T.LessThanOrEqualOperator {} }
+      '='             { T.IsEqualsOperator {} }
       '('             { T.LeftParenthesesOperator {} }
       ')'             { T.RightParenthesesOperator {} }
       '{'             { T.LeftCurlyBracesOperator {} }
@@ -37,6 +40,9 @@ import Parser.TerminalNode
 
 %left '+' '-'
 %left '*' '/'
+%left '<=' '<' '='
+
+%left  '<-'
 %%
 
 class :: { Class }
@@ -67,6 +73,11 @@ expr  :
       | expr '-' expr           { BinaryOp MinusTerminal $1 $3 }
       | expr '*' expr           { BinaryOp TimesTerminal $1 $3 }
       | expr '/' expr           { BinaryOp DivideTerminal $1 $3 }
+
+      | expr '<' expr           { BinaryOp LessThanTerminal $1 $3 }
+      | expr '<=' expr          { BinaryOp LessThanOrEqualTerminal $1 $3 }
+      | expr '=' expr           { BinaryOp EqualTerminal $1 $3 }
+      | expr '<-' expr          { AssignmentExpression $1 $3 }
       | int                     { IntegerExpr (T.getValue $1) }
       | objectID                { IdentifierExpr (T.getName $1) }
       | '(' expr ')'            { $2 }

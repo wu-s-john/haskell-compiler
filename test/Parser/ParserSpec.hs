@@ -26,7 +26,10 @@ spec =
       it "should parse division" $ "6 / 2" `testExpression` BinaryOp DivideTerminal (IntegerExpr 6) (IntegerExpr 2)
       it "should parse an identifier expression" $ "foo" `testExpression` IdentifierExpr "foo"
       it "should parse a block" $ "{ 6; foo; }" `testExpression` BlockExpression [IntegerExpr 6, IdentifierExpr "foo"]
-      it "should parse a block" $ "{ {; foo; }" `testExpression` BlockExpression [ExpressionError, IdentifierExpr "foo"]
+      it "should parse <" $ "1 < 2" `testExpression` BinaryOp LessThanTerminal (IntegerExpr 1) (IntegerExpr 2)
+      it "should parse <=" $ "1 <= 2" `testExpression` BinaryOp LessThanOrEqualTerminal (IntegerExpr 1) (IntegerExpr 2)
+      it "should parse =" $ "2 = 2" `testExpression` BinaryOp EqualTerminal (IntegerExpr 2) (IntegerExpr 2)
+      it "should parse <-" $ "foo <- 2" `testExpression` AssignmentExpression (IdentifierExpr "foo") (IntegerExpr 2)
     describe "features" $ do
       it "should parse a feature" $ testFeature "foo : Foo" $ Attribute (Identifier "foo") (Type "Foo") Nothing
       it "should parse a feature assigned to an expression" $
