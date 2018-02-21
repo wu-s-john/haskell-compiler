@@ -5,7 +5,6 @@ module Parser.AST where
 
 import Parser.TerminalNode
 
-
 data Class
   = OrphanedClass { getClassName :: Type
                   , getFeatures :: [Feature] }
@@ -20,11 +19,16 @@ data Feature = Attribute
   , getExpr :: Maybe Expression
   } deriving (Show, Read, Eq)
 
-data LetBinding = LetBinding
-  { getIdentifier :: Identifier
-  , getType :: Type
-  , getExpr :: Maybe Expression
-  } deriving (Show, Read, Eq)
+data LetBinding
+  = LetBinding { getIdentifier :: Identifier
+               , getType :: Type
+               , getInitExpr :: Maybe Expression
+               , getExpr :: Expression }
+  | LetDeclaration { getIdentifier :: Identifier
+                   , getType :: Type
+                   , getInitExpr :: Maybe Expression
+                   , getLetBinding :: LetBinding }
+  deriving (Show, Read, Eq)
 
 data Expression
   = BinaryOp { getBinaryOp :: BinaryOpTerminal
@@ -34,10 +38,10 @@ data Expression
             , getExpr :: Expression }
   | IntegerExpr Int
   | IdentifierExpr String
+  | StringExpr String
   | BlockExpression [Expression]
   | AssignmentExpression { getLeft :: Expression
                          , getRight :: Expression }
   | NewExpression { getType :: Type }
-  | LetExpression { getBindings :: [LetBinding]
-                  , getExpr :: Expression }
+  | LetExpression LetBinding
   deriving (Show, Read, Eq)

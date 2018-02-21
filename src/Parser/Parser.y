@@ -46,6 +46,7 @@ import Parser.TerminalNode
       'in'            { T.InKeyword {} }
       objectID        { T.ObjectIdentifier {} }
       typeID          { T.TypeIdentifier {} }
+      string          { T.StringLiteral {} }
 
 %right expr
 %left '~'
@@ -69,7 +70,7 @@ feats :
 
 feat :: { Feature }
 feat :
-        objectID ':' typeID opt_expr     { Attribute (Identifier (T.getName $1)) (Type (T.getName $3)) $4}
+        objectID ':' typeID opt_expr     { Attribute (Identifier (T.getName $1)) (Type (T.getName $3)) $4 }
 
 opt_expr :: {Maybe Expression}
 opt_expr : {- empty -}            { Nothing }
@@ -81,12 +82,11 @@ exprs : expr ';'                  { [$1] }
 
 letBinding :: { LetBinding }
 letBinding :
-           objectID ':' typeID opt_expr { LetBinding (Identifier (T.getName $1)) (Type (T.getName $3)) $4}
+             objectID ':' typeID ',' letBinding           { LetDeclaration (Identifier (T.getName $1)) (Type (T.getName $3)) Nothing $5 }
+           | objectID ':' typeID '<-' expr ',' letBinding { LetDeclaration (Identifier (T.getName $1)) (Type (T.getName $3)) (Just $5) $7 }
+           | objectID ':' typeID 'in' expr                { LetBinding (Identifier (T.getName $1)) (Type (T.getName $3)) Nothing $5 }
+           | objectID ':' typeID '<-' expr 'in' expr      { LetBinding (Identifier (T.getName $1)) (Type (T.getName $3)) (Just $5) $7 }
 
-letBindings :: { [LetBinding] }
-letBindings :
-         letBinding                     { [$1] }
-       | letBindings ',' letBinding { $1 ++ [$3] }
 
 expr :: { Expression }
 expr  :
@@ -107,6 +107,8 @@ expr  :
       | objectID                { IdentifierExpr (T.getName $1) }
       | '(' expr ')'            { $2 }
       | '{' exprs '}'           { BlockExpression $2 }
+      | 'let' letBinding        { LetExpression $2 }
+      | string                  { StringExpr (T.getStrVal $1)}
 
 {
 parseError :: [T.Token] -> a
