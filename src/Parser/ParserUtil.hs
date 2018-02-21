@@ -4,10 +4,8 @@ module Parser.ParserUtil where
 
 import Data.List (find)
 
-import Parser.AST
 import Lexer.Lexer (runAlex, scanner)
 import Lexer.Token
-import Parser.Parser (classParser)
 
 scanErrors :: [Token] -> [Token]
 scanErrors tokens =

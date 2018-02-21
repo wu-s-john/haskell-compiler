@@ -6,8 +6,8 @@ module Parser.ParserSpec
   ) where
 
 import Parser.AST
-import Parser.ParserUtil
 import Parser.TerminalNode
+import Parser.ParserUtil
 import Parser.Parser (classParser, featureParser, expressionParser, featuresParser)
 import Test.Hspec
        (Expectation, Spec, describe, hspec, it, shouldBe)
@@ -30,6 +30,10 @@ spec =
       it "should parse <=" $ "1 <= 2" `testExpression` BinaryOp LessThanOrEqualTerminal (IntegerExpr 1) (IntegerExpr 2)
       it "should parse =" $ "2 = 2" `testExpression` BinaryOp EqualTerminal (IntegerExpr 2) (IntegerExpr 2)
       it "should parse <-" $ "foo <- 2" `testExpression` AssignmentExpression (IdentifierExpr "foo") (IntegerExpr 2)
+      it "should parse not" $ "not foo" `testExpression` UnaryOp NotTerminal (IdentifierExpr "foo")
+      it "should parse isvoid" $ "isvoid foo" `testExpression` UnaryOp IsvoidTerminal (IdentifierExpr "foo")
+      it "should parse ~" $ "~ foo" `testExpression` UnaryOp TildeTerminal (IdentifierExpr "foo")
+      it "should parse new" $ "new Foo" `testExpression` NewExpression (Type "Foo")
     describe "features" $ do
       it "should parse a feature" $ testFeature "foo : Foo" $ Attribute (Identifier "foo") (Type "Foo") Nothing
       it "should parse a feature assigned to an expression" $

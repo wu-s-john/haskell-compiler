@@ -22,9 +22,10 @@ library
                      , Lexer.TokenUtil
                      , Lexer.LexerUtil
                      , Parser.AST
+                     , Parser.TerminalNode
                      , Parser.Parser
                      , Parser.ParserUtil
-                     , Parser.TerminalNode
+
   build-depends:       base >= 4.7 && < 5
                      , parsec
                      , lens

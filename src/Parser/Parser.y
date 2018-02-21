@@ -1,10 +1,12 @@
 {
 module Parser.Parser where
 import Data.Char
-import qualified Lexer.Token as T
-import Parser.AST
+
 import Data.Maybe
 import Data.List
+
+import qualified Lexer.Token as T
+import Parser.AST
 import Parser.TerminalNode
 }
 
@@ -26,6 +28,7 @@ import Parser.TerminalNode
       '<'             { T.LessThanOperator {} }
       '<='            { T.LessThanOrEqualOperator {} }
       '='             { T.IsEqualsOperator {} }
+      'new'           { T.NewKeyword {} }
       '('             { T.LeftParenthesesOperator {} }
       ')'             { T.RightParenthesesOperator {} }
       '{'             { T.LeftCurlyBracesOperator {} }
@@ -33,16 +36,25 @@ import Parser.TerminalNode
       ':'             { T.ColonOperator {} }
       '<-'            { T.AssignmentOperator {} }
       ';'             { T.SemicolonOperator {} }
+      '~'             { T.TildeOperator {} }
+      ','             { T.CommaOperator {} }
+      'isvoid'        { T.IsvoidKeyword {}}
       'class'         { T.ClassKeyword {} }
       'inherits'      { T.InheritsKeyword {} }
+      'not'           { T.NotKeyword {} }
+      'let'           { T.LetKeyword {} }
+      'in'            { T.InKeyword {} }
       objectID        { T.ObjectIdentifier {} }
       typeID          { T.TypeIdentifier {} }
 
+%right expr
+%left '~'
+%left 'isvoid'
 %left '+' '-'
 %left '*' '/'
 %left '<=' '<' '='
-
-%left  '<-'
+%left 'not'
+%right  '<-'
 %%
 
 class :: { Class }
@@ -67,6 +79,15 @@ exprs :: { [Expression] }
 exprs : expr ';'                  { [$1] }
       | exprs expr ';'            { $1 ++ [$2] }
 
+letBinding :: { LetBinding }
+letBinding :
+           objectID ':' typeID opt_expr { LetBinding (Identifier (T.getName $1)) (Type (T.getName $3)) $4}
+
+letBindings :: { [LetBinding] }
+letBindings :
+         letBinding                     { [$1] }
+       | letBindings ',' letBinding { $1 ++ [$3] }
+
 expr :: { Expression }
 expr  :
         expr '+' expr           { BinaryOp PlusTerminal $1 $3 }
@@ -78,6 +99,10 @@ expr  :
       | expr '<=' expr          { BinaryOp LessThanOrEqualTerminal $1 $3 }
       | expr '=' expr           { BinaryOp EqualTerminal $1 $3 }
       | expr '<-' expr          { AssignmentExpression $1 $3 }
+      | 'new' typeID            { NewExpression (Type (T.getName $2)) }
+      | '~' expr                { UnaryOp TildeTerminal $2 }
+      | 'isvoid' expr           { UnaryOp IsvoidTerminal $2 }
+      | 'not' expr              { UnaryOp NotTerminal $2 }
       | int                     { IntegerExpr (T.getValue $1) }
       | objectID                { IdentifierExpr (T.getName $1) }
       | '(' expr ')'            { $2 }
