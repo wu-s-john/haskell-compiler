@@ -42,6 +42,9 @@ spec =
             (Type "Foo")
             (Identifier "call")
             [IntegerExpr 1, IdentifierExpr "bar"]
+      it "should parse a while loop" $
+        "while true loop foo() pool" `testExpression`
+        LoopExpr TrueExpr (MethodDispatch SelfVarExpr (Identifier "foo") [])
       it "should parse conditional expressions" $
         "if 1 then \"foo\" else \"bar\" fi" `testExpression`
         CondExpr (IntegerExpr 1) (StringExpr "foo") (StringExpr "bar")
@@ -98,6 +101,8 @@ spec =
       it "should parse ()" $ "(foo)" `testExpression` IdentifierExpr "foo"
       it "should parse an identifier expression" $ "foo" `testExpression` IdentifierExpr "foo"
       it "should parse a string" $ "\"foo\"" `testExpression` StringExpr "foo"
+      it "should parse a true" $ "true" `testExpression` TrueExpr
+      it "should parse a false" $ "false" `testExpression` FalseExpr
     describe "features" $ do
       it "should parse a feature" $ testFeature "foo : Foo" $ Attribute (Identifier "foo") (Type "Foo") Nothing
       it "should parse a feature assigned to an expression" $

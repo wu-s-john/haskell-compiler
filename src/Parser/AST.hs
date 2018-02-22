@@ -32,6 +32,8 @@ data Expression
   | CondExpr { getPred :: Expression
              , getThenBranch :: Expression
              , getElseBranch :: Expression }
+  | LoopExpr { getPred :: Expression
+             , getBody :: Expression }
   | BlockExpr [Expression]
   | LetExpr LetBinding
   | TypeCaseExpr { getExpr :: Expression
@@ -58,6 +60,8 @@ data Expression
   | IdentifierExpr String
   | IntegerExpr Int
   | StringExpr String
+  | TrueExpr
+  | FalseExpr
   deriving (Show, Read, Eq)
 
 data CaseBranch = CaseBranch

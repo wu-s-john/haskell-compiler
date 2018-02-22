@@ -58,6 +58,11 @@ import Parser.TerminalNodeUtil
       objectID        { T.ObjectIdentifier {} }
       typeID          { T.TypeIdentifier {} }
       string          { T.StringLiteral {} }
+      'true'          { T.TrueKeyword {} }
+      'false'         { T.FalseKeyword {} }
+      'while'         { T.WhileKeyword {} }
+      'loop'          { T.LoopKeyword {} }
+      'pool'          { T.PoolKeyword {} }
 
 %left '.'
 %left '@'
@@ -139,6 +144,9 @@ expr  :
         ')'                     { MethodDispatch SelfVarExpr (toIdentifier $1) $3 }
       | 'if' expr 'then'
         expr 'else' expr 'fi'   { CondExpr $2 $4 $6 }
+      | 'while' expr
+        'loop' expr
+        'pool'                  { LoopExpr $2 $4 }
       | '{' exprs '}'           { BlockExpr $2 }
       | 'let' letBinding        { LetExpr $2 }
       | 'case' expr 'of'
@@ -158,6 +166,8 @@ expr  :
       | objectID                { IdentifierExpr (T.getName $1) }
       | int                     { IntegerExpr (T.getValue $1) }
       | string                  { StringExpr (T.getStrVal $1)}
+      | 'true'                  { TrueExpr }
+      | 'false'                 { FalseExpr }
 
 {
 parseError :: [T.Token] -> a
