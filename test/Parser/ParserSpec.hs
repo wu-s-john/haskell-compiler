@@ -11,7 +11,9 @@ import Parser.Parser
 import Parser.ParserUtil
 import Parser.TerminalNode
 import Test.Hspec
-       (Expectation, Spec, describe, hspec, it, shouldBe)
+       (Expectation, Spec, describe, hspec, it, shouldBe,shouldThrow,anyException)
+import Control.Exception (evaluate)
+
 
 main :: IO ()
 main = hspec spec
@@ -36,6 +38,15 @@ spec =
       it "should parse ~" $ "~ foo" `testExpression` UnaryOp TildeTerminal (IdentifierExpr "foo")
       it "should parse new" $ "new Foo" `testExpression` NewExpression (Type "Foo")
       it "should parse a string" $ "\"foo\"" `testExpression` StringExpr "foo"
+      it "should parse a type class" $
+        "case foo of x: Int => 3; y: String => \"foo\"; esac " `testExpression`
+        TypeCaseExpression
+          (IdentifierExpr "foo")
+          [ CaseBranch (Identifier "x") (Type "Int") (IntegerExpr 3)
+          , CaseBranch (Identifier "y") (Type "String") (StringExpr "foo")
+          ]
+      it "should create an error if there are no case bracnhes" $
+                evaluate (stringToAST expressionParser "case foo of x: esac") `shouldThrow` anyException
       describe "let" $ do
         it "should parse a let expression with no expression" $
           "let foo : Bar in foo" `testExpression`
@@ -64,6 +75,8 @@ spec =
                   (Type "String")
                   Nothing
                   (LetBinding (Identifier "z") (Type "Int") Nothing (IdentifierExpr "x"))))
+        it "should create an error if let has no identifier bindings" $
+          evaluate (stringToAST expressionParser "let in x") `shouldThrow` anyException
     describe "features" $ do
       it "should parse a feature" $ testFeature "foo : Foo" $ Attribute (Identifier "foo") (Type "Foo") Nothing
       it "should parse a feature assigned to an expression" $

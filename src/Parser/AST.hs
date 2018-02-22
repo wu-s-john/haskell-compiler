@@ -30,6 +30,12 @@ data LetBinding
                    , getLetBinding :: LetBinding }
   deriving (Show, Read, Eq)
 
+data CaseBranch = CaseBranch
+  { getIdentifier :: Identifier
+  , getType :: Type
+  , getExpr :: Expression
+  } deriving (Show, Read, Eq)
+
 data Expression
   = BinaryOp { getBinaryOp :: BinaryOpTerminal
              , getLeft :: Expression
@@ -44,4 +50,5 @@ data Expression
                          , getRight :: Expression }
   | NewExpression { getType :: Type }
   | LetExpression LetBinding
+  | TypeCaseExpression Expression [CaseBranch]
   deriving (Show, Read, Eq)

@@ -44,6 +44,10 @@ import Parser.TerminalNode
       'not'           { T.NotKeyword {} }
       'let'           { T.LetKeyword {} }
       'in'            { T.InKeyword {} }
+      'case'          { T.CaseKeyword {} }
+      'of'            { T.OfKeyword {} }
+      '=>'            { T.TypeBoundOperator {} }
+      'esac'          { T.EsacKeyword {} }
       objectID        { T.ObjectIdentifier {} }
       typeID          { T.TypeIdentifier {} }
       string          { T.StringLiteral {} }
@@ -87,6 +91,14 @@ letBinding :
            | objectID ':' typeID 'in' expr                { LetBinding (Identifier (T.getName $1)) (Type (T.getName $3)) Nothing $5 }
            | objectID ':' typeID '<-' expr 'in' expr      { LetBinding (Identifier (T.getName $1)) (Type (T.getName $3)) (Just $5) $7 }
 
+caseBranch :: { CaseBranch }
+caseBranch :
+            objectID ':' typeID  '=>' expr ';' {CaseBranch (Identifier (T.getName $1)) (Type (T.getName $3)) $5 }
+
+caseBranches :: { [CaseBranch] }
+caseBranches :
+                caseBranch               { [ $1 ]}
+              | caseBranches caseBranch  { $1 ++ [$2] }
 
 expr :: { Expression }
 expr  :
@@ -108,6 +120,7 @@ expr  :
       | '(' expr ')'            { $2 }
       | '{' exprs '}'           { BlockExpression $2 }
       | 'let' letBinding        { LetExpression $2 }
+      | 'case' expr 'of' caseBranches 'esac' { TypeCaseExpression $2 $4 }
       | string                  { StringExpr (T.getStrVal $1)}
 
 {
