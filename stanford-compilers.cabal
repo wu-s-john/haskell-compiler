@@ -23,6 +23,7 @@ library
                      , Lexer.LexerUtil
                      , Parser.AST
                      , Parser.TerminalNode
+                     , Parser.TerminalNodeUtil
                      , Parser.Parser
                      , Parser.ParserUtil
 

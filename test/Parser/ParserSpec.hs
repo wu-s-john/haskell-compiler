@@ -38,15 +38,19 @@ spec =
       it "should parse ~" $ "~ foo" `testExpression` UnaryOp TildeTerminal (IdentifierExpr "foo")
       it "should parse new" $ "new Foo" `testExpression` NewExpression (Type "Foo")
       it "should parse a string" $ "\"foo\"" `testExpression` StringExpr "foo"
-      it "should parse a type class" $
-        "case foo of x: Int => 3; y: String => \"foo\"; esac " `testExpression`
-        TypeCaseExpression
-          (IdentifierExpr "foo")
-          [ CaseBranch (Identifier "x") (Type "Int") (IntegerExpr 3)
-          , CaseBranch (Identifier "y") (Type "String") (StringExpr "foo")
-          ]
-      it "should create an error if there are no case bracnhes" $
-        evaluate (stringToAST expressionParser "case foo of x: esac") `shouldThrow` anyException
+      describe "typecases" $ do
+        it "should parse a type case" $
+          "case foo of x: Int => 3; y: String => \"foo\"; esac " `testExpression`
+          TypeCaseExpression
+            (IdentifierExpr "foo")
+            [ CaseBranch (Identifier "x") (Type "Int") (IntegerExpr 3)
+            , CaseBranch (Identifier "y") (Type "String") (StringExpr "foo")
+            ]
+        it "should create an error if there are no case branches" $
+          evaluate (stringToAST expressionParser "case foo of x: esac") `shouldThrow` anyException
+      it "should parse conditional expressions" $
+        "if 1 then \"foo\" else \"bar\" fi" `testExpression`
+        ConditionalExpression (IntegerExpr 1) (StringExpr "foo") (StringExpr "bar")
       describe "let" $ do
         it "should parse a let expression with no expression" $
           "let foo : Bar in foo" `testExpression`

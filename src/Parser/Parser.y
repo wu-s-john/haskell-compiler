@@ -51,6 +51,10 @@ import Parser.TerminalNodeUtil
       'of'            { T.OfKeyword {} }
       '=>'            { T.TypeBoundOperator {} }
       'esac'          { T.EsacKeyword {} }
+      'if'            { T.IfKeyword {} }
+      'then'          { T.ThenKeyword {} }
+      'else'          { T.ElseKeyword {} }
+      'fi'            { T.FiKeyword {} }
       objectID        { T.ObjectIdentifier {} }
       typeID          { T.TypeIdentifier {} }
       string          { T.StringLiteral {} }
@@ -132,10 +136,11 @@ expr  :
       | 'case' expr 'of'
       caseBranches 'esac'       { TypeCaseExpression $2 $4 }
       | expr '+' expr           { BinaryOp PlusTerminal $1 $3 }
+      | 'if' expr 'then'
+        expr 'else' expr 'fi'   { ConditionalExpression $2 $4 $6 }
       | expr '-' expr           { BinaryOp MinusTerminal $1 $3 }
       | expr '*' expr           { BinaryOp TimesTerminal $1 $3 }
       | expr '/' expr           { BinaryOp DivideTerminal $1 $3 }
-
       | expr '<' expr           { BinaryOp LessThanTerminal $1 $3 }
       | expr '<=' expr          { BinaryOp LessThanOrEqualTerminal $1 $3 }
       | expr '=' expr           { BinaryOp EqualTerminal $1 $3 }

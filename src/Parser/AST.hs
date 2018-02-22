@@ -60,4 +60,7 @@ data Expression
                          , getParentType :: Type
                          , getMethodName :: Identifier
                          , getParameters :: [Expression] }
+  | ConditionalExpression { getPred :: Expression
+                          , getThenBranch :: Expression
+                          , getElseBranch :: Expression }
   deriving (Show, Read, Eq)
