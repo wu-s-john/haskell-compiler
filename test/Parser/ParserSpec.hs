@@ -88,6 +88,13 @@ spec =
         it "should parse a method dispatch with multiple parameters and no tied expression" $
           "foo.call(1, bar)" `testExpression`
           MethodDispatch (IdentifierExpr "foo") (Identifier "call") [IntegerExpr 1, IdentifierExpr "bar"]
+        it "should call parse a method with multiple parameters and a call to static methods" $
+          "foo@Foo.call(1, bar)" `testExpression`
+          StaticMethodDispatch
+            (IdentifierExpr "foo")
+            (Type "Foo")
+            (Identifier "call")
+            [IntegerExpr 1, IdentifierExpr "bar"]
     describe "features" $ do
       it "should parse a feature" $ testFeature "foo : Foo" $ Attribute (Identifier "foo") (Type "Foo") Nothing
       it "should parse a feature assigned to an expression" $

@@ -51,6 +51,13 @@ data Expression
                          , getRight :: Expression }
   | NewExpression { getType :: Type }
   | LetExpression LetBinding
-  | TypeCaseExpression Expression [CaseBranch]
-  | MethodDispatch Expression Identifier [Expression]
+  | TypeCaseExpression { getExpr :: Expression
+                       , getBranches :: [CaseBranch] }
+  | MethodDispatch { getExpr :: Expression
+                   , getMethodName :: Identifier
+                   , getParameters :: [Expression] }
+  | StaticMethodDispatch { getExpr :: Expression
+                         , getParentType :: Type
+                         , getMethodName :: Identifier
+                         , getParameters :: [Expression] }
   deriving (Show, Read, Eq)

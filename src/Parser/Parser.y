@@ -8,6 +8,7 @@ import Data.List
 import qualified Lexer.Token as T
 import Parser.AST
 import Parser.TerminalNode
+import Parser.TerminalNodeUtil
 }
 
 
@@ -39,6 +40,7 @@ import Parser.TerminalNode
       '~'             { T.TildeOperator {} }
       ','             { T.CommaOperator {} }
       '.'             { T.PeriodOperator {} }
+      '@'             { T.AtOperator {} }
       'isvoid'        { T.IsvoidKeyword {}}
       'class'         { T.ClassKeyword {} }
       'inherits'      { T.InheritsKeyword {} }
@@ -54,6 +56,7 @@ import Parser.TerminalNode
       string          { T.StringLiteral {} }
 
 %left '.'
+%left '@'
 %left '~'
 %left 'isvoid'
 %left '+' '-'
@@ -65,8 +68,8 @@ import Parser.TerminalNode
 
 class :: { Class }
 class :
-        'class' typeID '{' feats '}'    { OrphanedClass (Type (T.getName $2)) $4 }
-      | 'class' typeID  'inherits' typeID '{' feats '}'    { InheritedClass (Type (T.getName $2)) (Type (T.getName $4)) $6 }
+        'class' typeID '{' feats '}'    { OrphanedClass (toType $2) $4 }
+      | 'class' typeID  'inherits' typeID '{' feats '}'    { InheritedClass (toType $2) (toType $4) $6 }
 
 feats :: { [Feature] }
 feats :
@@ -75,7 +78,7 @@ feats :
 
 feat :: { Feature }
 feat :
-        objectID ':' typeID opt_expr     { Attribute (Identifier (T.getName $1)) (Type (T.getName $3)) $4 }
+        objectID ':' typeID opt_expr     { Attribute (toIdentifier $1) (toType $3) $4 }
 
 opt_expr :: {Maybe Expression}
 opt_expr : {- empty -}            { Nothing }
@@ -87,14 +90,14 @@ exprs : expr ';'                  { [$1] }
 
 letBinding :: { LetBinding }
 letBinding :
-             objectID ':' typeID ',' letBinding           { LetDeclaration (Identifier (T.getName $1)) (Type (T.getName $3)) Nothing $5 }
-           | objectID ':' typeID '<-' expr ',' letBinding { LetDeclaration (Identifier (T.getName $1)) (Type (T.getName $3)) (Just $5) $7 }
-           | objectID ':' typeID 'in' expr                { LetBinding (Identifier (T.getName $1)) (Type (T.getName $3)) Nothing $5 }
-           | objectID ':' typeID '<-' expr 'in' expr      { LetBinding (Identifier (T.getName $1)) (Type (T.getName $3)) (Just $5) $7 }
+             objectID ':' typeID ',' letBinding           { LetDeclaration (toIdentifier $1) (toType $3) Nothing $5 }
+           | objectID ':' typeID '<-' expr ',' letBinding { LetDeclaration (toIdentifier $1) (toType $3) (Just $5) $7 }
+           | objectID ':' typeID 'in' expr                { LetBinding (toIdentifier $1) (toType $3) Nothing $5 }
+           | objectID ':' typeID '<-' expr 'in' expr      { LetBinding (toIdentifier $1) (toType $3) (Just $5) $7 }
 
 caseBranch :: { CaseBranch }
 caseBranch :
-            objectID ':' typeID  '=>' expr ';' {CaseBranch (Identifier (T.getName $1)) (Type (T.getName $3)) $5 }
+            objectID ':' typeID  '=>' expr ';' {CaseBranch (toIdentifier $1) (toType $3) $5 }
 
 caseBranches :: { [CaseBranch] }
 caseBranches :
@@ -113,13 +116,18 @@ optionalMethodInputs :
 
 expr :: { Expression }
 expr  :
-        expr '.'
+
+       expr '@' typeID '.'
+               objectID '('
+               optionalMethodInputs
+               ')'                     { StaticMethodDispatch $1 (toType $3) (toIdentifier $5) $7 }
+      | expr '.'
         objectID '('
         optionalMethodInputs
-        ')'                     { MethodDispatch $1 (Identifier (T.getName $3)) $5 }
+        ')'                     { MethodDispatch $1 (toIdentifier $3) $5 }
       | objectID '('
         optionalMethodInputs
-        ')'                     { MethodDispatch SelfVarExpr (Identifier (T.getName $1)) $3 }
+        ')'                     { MethodDispatch SelfVarExpr (toIdentifier $1) $3 }
       | 'let' letBinding        { LetExpression $2 }
       | 'case' expr 'of'
       caseBranches 'esac'       { TypeCaseExpression $2 $4 }
@@ -132,7 +140,7 @@ expr  :
       | expr '<=' expr          { BinaryOp LessThanOrEqualTerminal $1 $3 }
       | expr '=' expr           { BinaryOp EqualTerminal $1 $3 }
       | expr '<-' expr          { AssignmentExpression $1 $3 }
-      | 'new' typeID            { NewExpression (Type (T.getName $2)) }
+      | 'new' typeID            { NewExpression (toType $2) }
       | '~' expr                { UnaryOp TildeTerminal $2 }
       | 'isvoid' expr           { UnaryOp IsvoidTerminal $2 }
       | 'not' expr              { UnaryOp NotTerminal $2 }
