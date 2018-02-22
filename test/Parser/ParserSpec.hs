@@ -104,20 +104,43 @@ spec =
       it "should parse a true" $ "true" `testExpression` TrueExpr
       it "should parse a false" $ "false" `testExpression` FalseExpr
     describe "features" $ do
-      it "should parse a feature" $ testFeature "foo : Foo" $ Attribute (Identifier "foo") (Type "Foo") Nothing
-      it "should parse a feature assigned to an expression" $
-        testFeature "foo : Foo <- bar" $ Attribute (Identifier "foo") (Type "Foo") (Just (IdentifierExpr "bar"))
+      it "should parse a feature attribute" $
+        "foo : Foo" `testFeature` createAttribute "foo" "Foo" Nothing
+      it "should parse a feature attribute assigned to an expression" $
+        "foo : Foo <- bar" `testFeature` createAttribute "foo" "Foo" (Just (IdentifierExpr "bar"))
+      describe "methods" $ do
+        it "should parse a feature method with no parameters" $
+          "call() : Foo {\"string\"}" `testFeature` createMethod "call" "Foo" [] (StringExpr "string")
+        it "should parse a feature method with one parameter" $
+          "identity(x: Int) : Int { x }" `testFeature`
+          createMethod "identity" "Int" [createFormal "x" "Int"] (IdentifierExpr "x")
+        it "should parse a feature method with multiple parameters" $
+          "sum(x : Int, y : Int) : Int { x + y }" `testFeature`
+          createMethod
+            "sum"
+            "Int"
+            [createFormal "x" "Int", createFormal "y" "Int"]
+            (PlusExpr (IdentifierExpr "x") (IdentifierExpr "y"))
       it "should parse a multiple features" $
         testParser
           (stringToAST featuresParser)
           "foo : Foo <- bar; \n    x : Y;\n"
-          [ Attribute (Identifier "foo") (Type "Foo") (Just (IdentifierExpr "bar"))
-          , Attribute (Identifier "x") (Type "Y") Nothing
+          [ createAttribute "foo" "Foo" (Just (IdentifierExpr "bar"))
+          , createAttribute "x" "Y" Nothing
           ]
     describe "class" $ do
       it "should parse an orphaned class" $ testClass "class Foo {\n\n}\n" (OrphanedClass (Type "Foo") [])
       it "should parse an inherited class" $
         testClass "class Foo inherits Bar {\n\n}\n" (InheritedClass (Type "Foo") (Type "Bar") [])
+
+createMethod :: String -> String -> [Formal] -> Expression -> Feature
+createMethod methodName typeName parameters = Method (Identifier methodName) parameters (Type typeName)
+
+createAttribute :: String -> String -> Maybe Expression -> Feature
+createAttribute attrName typeName = Attribute (Identifier attrName) (Type typeName)
+
+createFormal :: String -> String -> Formal
+createFormal identifierName typeName = Formal (Identifier identifierName) (Type typeName)
 
 testParser ::
      Show a

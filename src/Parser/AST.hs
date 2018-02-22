@@ -13,10 +13,19 @@ data Class
                    , getFeatures :: [Feature] }
   deriving (Show, Read, Eq)
 
-data Feature = Attribute
-  { getName :: Identifier
+data Feature
+  = Attribute { getName :: Identifier
+              , getType :: Type
+              , getInitExpr :: Maybe Expression }
+  | Method { getName :: Identifier
+           , getFormals :: [Formal]
+           , getType :: Type
+           , getExpr :: Expression }
+  deriving (Show, Read, Eq)
+
+data Formal = Formal
+  { getIdentifier :: Identifier
   , getType :: Type
-  , getExpr :: Maybe Expression
   } deriving (Show, Read, Eq)
 
 data Expression

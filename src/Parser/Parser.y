@@ -87,7 +87,25 @@ feats :
 
 feat :: { Feature }
 feat :
-        objectID ':' typeID opt_expr     { Attribute (toIdentifier $1) (toType $3) $4 }
+        objectID ':' typeID opt_expr        { Attribute (toIdentifier $1) (toType $3) $4 }
+      | objectID
+        '(' optMethodParameters ')'
+        ':' typeID
+        '{' expr '}'                        { Method (toIdentifier $1) $3 (toType $6) $8}
+
+formal :: { Formal }
+formal :
+          objectID ':' typeID               { Formal (toIdentifier $1) (toType $3) }
+
+methodParameters :: { [Formal] }
+methodParameters :
+               formal                        { [ $1 ] }
+             | methodParameters ',' formal   { $1 ++ [$3]}
+
+optMethodParameters :
+                {- empty -}              { [] }
+              | methodParameters         { $1 }
+
 
 opt_expr :: {Maybe Expression}
 opt_expr : {- empty -}            { Nothing }
@@ -118,8 +136,8 @@ methodInputs :
                 expr                    { [ $1 ] }
               | methodInputs ',' expr   { $1 ++ [$3]}
 
-optionalMethodInputs :: { [Expression] }
-optionalMethodInputs :
+optMethodInputs :: { [Expression] }
+optMethodInputs :
               {- empty -}               { [] }
             | methodInputs              { $1 }
 
@@ -127,11 +145,11 @@ staticDispatch :: { Expression }
 staticDispatch :
         expr '@' typeID '.'
               objectID '('
-              optionalMethodInputs
+              optMethodInputs
               ')'                     { StaticMethodDispatch $1 (toType $3) (toIdentifier $5) $7 }
       | expr '.'
             objectID '('
-            optionalMethodInputs
+            optMethodInputs
             ')'                       { MethodDispatch $1 (toIdentifier $3) $5 }
 
 expr :: { Expression }
@@ -140,7 +158,7 @@ expr  :
         objectID '<-' expr      { AssignmentExpr (toIdentifier $1) $3 }
       | staticDispatch          { $1 }
       | objectID '('
-        optionalMethodInputs
+        optMethodInputs
         ')'                     { MethodDispatch SelfVarExpr (toIdentifier $1) $3 }
       | 'if' expr 'then'
         expr 'else' expr 'fi'   { CondExpr $2 $4 $6 }
