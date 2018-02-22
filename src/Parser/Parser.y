@@ -118,41 +118,45 @@ optionalMethodInputs :
               {- empty -}               { [] }
             | methodInputs              { $1 }
 
+staticDispatch :: { Expression }
+staticDispatch :
+        expr '@' typeID '.'
+              objectID '('
+              optionalMethodInputs
+              ')'                     { StaticMethodDispatch $1 (toType $3) (toIdentifier $5) $7 }
+      | expr '.'
+            objectID '('
+            optionalMethodInputs
+            ')'                       { MethodDispatch $1 (toIdentifier $3) $5 }
+
 expr :: { Expression }
 expr  :
 
-       expr '@' typeID '.'
-               objectID '('
-               optionalMethodInputs
-               ')'                     { StaticMethodDispatch $1 (toType $3) (toIdentifier $5) $7 }
-      | expr '.'
-        objectID '('
-        optionalMethodInputs
-        ')'                     { MethodDispatch $1 (toIdentifier $3) $5 }
+        objectID '<-' expr      { AssignmentExpr (toIdentifier $1) $3 }
+      | staticDispatch          { $1 }
       | objectID '('
         optionalMethodInputs
         ')'                     { MethodDispatch SelfVarExpr (toIdentifier $1) $3 }
-      | 'let' letBinding        { LetExpression $2 }
-      | 'case' expr 'of'
-      caseBranches 'esac'       { TypeCaseExpression $2 $4 }
-      | expr '+' expr           { BinaryOp PlusTerminal $1 $3 }
       | 'if' expr 'then'
-        expr 'else' expr 'fi'   { ConditionalExpression $2 $4 $6 }
-      | expr '-' expr           { BinaryOp MinusTerminal $1 $3 }
-      | expr '*' expr           { BinaryOp TimesTerminal $1 $3 }
-      | expr '/' expr           { BinaryOp DivideTerminal $1 $3 }
-      | expr '<' expr           { BinaryOp LessThanTerminal $1 $3 }
-      | expr '<=' expr          { BinaryOp LessThanOrEqualTerminal $1 $3 }
-      | expr '=' expr           { BinaryOp EqualTerminal $1 $3 }
-      | expr '<-' expr          { AssignmentExpression $1 $3 }
-      | 'new' typeID            { NewExpression (toType $2) }
-      | '~' expr                { UnaryOp TildeTerminal $2 }
-      | 'isvoid' expr           { UnaryOp IsvoidTerminal $2 }
-      | 'not' expr              { UnaryOp NotTerminal $2 }
-      | int                     { IntegerExpr (T.getValue $1) }
-      | objectID                { IdentifierExpr (T.getName $1) }
+        expr 'else' expr 'fi'   { CondExpr $2 $4 $6 }
+      | '{' exprs '}'           { BlockExpr $2 }
+      | 'let' letBinding        { LetExpr $2 }
+      | 'case' expr 'of'
+         caseBranches 'esac'    { TypeCaseExpr $2 $4 }
+      | 'new' typeID            { NewExpr (toType $2) }
+      | 'isvoid' expr           { IsvoidExpr $2 }
+      | expr '+' expr           { PlusExpr $1 $3 }
+      | expr '-' expr           { MinusExpr $1 $3 }
+      | expr '*' expr           { TimesExpr $1 $3 }
+      | expr '/' expr           { DivideExpr $1 $3 }
+      | '~' expr                { NegExpr $2 }
+      | expr '<' expr           { LessThanExpr $1 $3 }
+      | expr '<=' expr          { LessThanOrEqualExpr $1 $3 }
+      | expr '=' expr           { EqualExpr $1 $3 }
+      | 'not' expr              { NotExpr $2 }
       | '(' expr ')'            { $2 }
-      | '{' exprs '}'           { BlockExpression $2 }
+      | objectID                { IdentifierExpr (T.getName $1) }
+      | int                     { IntegerExpr (T.getValue $1) }
       | string                  { StringExpr (T.getStrVal $1)}
 
 {

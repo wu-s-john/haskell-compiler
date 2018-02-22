@@ -19,6 +19,53 @@ data Feature = Attribute
   , getExpr :: Maybe Expression
   } deriving (Show, Read, Eq)
 
+data Expression
+  = AssignmentExpr { getIdentifier :: Identifier
+                   , getRight :: Expression }
+  | MethodDispatch { getExpr :: Expression
+                   , getMethodName :: Identifier
+                   , getParameters :: [Expression] }
+  | StaticMethodDispatch { getExpr :: Expression
+                         , getParentType :: Type
+                         , getMethodName :: Identifier
+                         , getParameters :: [Expression] }
+  | CondExpr { getPred :: Expression
+             , getThenBranch :: Expression
+             , getElseBranch :: Expression }
+  | BlockExpr [Expression]
+  | LetExpr LetBinding
+  | TypeCaseExpr { getExpr :: Expression
+                 , getBranches :: [CaseBranch] }
+  | NewExpr { getType :: Type }
+  | IsvoidExpr { getExpr :: Expression }
+  | PlusExpr { getLeft :: Expression
+             , getRight :: Expression }
+  | MinusExpr { getLeft :: Expression
+              , getRight :: Expression }
+  | TimesExpr { getLeft :: Expression
+              , getRight :: Expression }
+  | DivideExpr { getLeft :: Expression
+               , getRight :: Expression }
+  | NegExpr { getExpr :: Expression }
+  | LessThanExpr { getLeft :: Expression
+                 , getRight :: Expression }
+  | LessThanOrEqualExpr { getLeft :: Expression
+                        , getRight :: Expression }
+  | EqualExpr { getLeft :: Expression
+              , getRight :: Expression }
+  | NotExpr { getExpr :: Expression }
+  | SelfVarExpr
+  | IdentifierExpr String
+  | IntegerExpr Int
+  | StringExpr String
+  deriving (Show, Read, Eq)
+
+data CaseBranch = CaseBranch
+  { getIdentifier :: Identifier
+  , getType :: Type
+  , getExpr :: Expression
+  } deriving (Show, Read, Eq)
+
 data LetBinding
   = LetBinding { getIdentifier :: Identifier
                , getType :: Type
@@ -28,39 +75,4 @@ data LetBinding
                    , getType :: Type
                    , getInitExpr :: Maybe Expression
                    , getLetBinding :: LetBinding }
-  deriving (Show, Read, Eq)
-
-data CaseBranch = CaseBranch
-  { getIdentifier :: Identifier
-  , getType :: Type
-  , getExpr :: Expression
-  } deriving (Show, Read, Eq)
-
-data Expression
-  = BinaryOp { getBinaryOp :: BinaryOpTerminal
-             , getLeft :: Expression
-             , getRight :: Expression }
-  | UnaryOp { getUnaryOp :: UnaryOpTerminal
-            , getExpr :: Expression }
-  | IntegerExpr Int
-  | IdentifierExpr String
-  | SelfVarExpr
-  | StringExpr String
-  | BlockExpression [Expression]
-  | AssignmentExpression { getLeft :: Expression
-                         , getRight :: Expression }
-  | NewExpression { getType :: Type }
-  | LetExpression LetBinding
-  | TypeCaseExpression { getExpr :: Expression
-                       , getBranches :: [CaseBranch] }
-  | MethodDispatch { getExpr :: Expression
-                   , getMethodName :: Identifier
-                   , getParameters :: [Expression] }
-  | StaticMethodDispatch { getExpr :: Expression
-                         , getParentType :: Type
-                         , getMethodName :: Identifier
-                         , getParameters :: [Expression] }
-  | ConditionalExpression { getPred :: Expression
-                          , getThenBranch :: Expression
-                          , getElseBranch :: Expression }
   deriving (Show, Read, Eq)
