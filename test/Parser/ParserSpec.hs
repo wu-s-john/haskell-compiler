@@ -5,15 +5,15 @@ module Parser.ParserSpec
   , spec
   ) where
 
+import Control.Exception (evaluate)
 import Parser.AST
 import Parser.Parser
        (classParser, expressionParser, featureParser, featuresParser)
 import Parser.ParserUtil
 import Parser.TerminalNode
 import Test.Hspec
-       (Expectation, Spec, describe, hspec, it, shouldBe,shouldThrow,anyException)
-import Control.Exception (evaluate)
-
+       (Expectation, Spec, anyException, describe, hspec, it, shouldBe,
+        shouldThrow)
 
 main :: IO ()
 main = hspec spec
@@ -46,7 +46,7 @@ spec =
           , CaseBranch (Identifier "y") (Type "String") (StringExpr "foo")
           ]
       it "should create an error if there are no case bracnhes" $
-                evaluate (stringToAST expressionParser "case foo of x: esac") `shouldThrow` anyException
+        evaluate (stringToAST expressionParser "case foo of x: esac") `shouldThrow` anyException
       describe "let" $ do
         it "should parse a let expression with no expression" $
           "let foo : Bar in foo" `testExpression`
@@ -77,6 +77,17 @@ spec =
                   (LetBinding (Identifier "z") (Type "Int") Nothing (IdentifierExpr "x"))))
         it "should create an error if let has no identifier bindings" $
           evaluate (stringToAST expressionParser "let in x") `shouldThrow` anyException
+      describe "dispatch" $ do
+        it "should parse a method  dispatch with no calls and no tied expression" $
+          "foo()" `testExpression` MethodDispatch SelfVarExpr (Identifier "foo") []
+        it "should parse a method  dispatch with one parameter and no tied expression" $
+          "foo(1)" `testExpression` MethodDispatch SelfVarExpr (Identifier "foo") [IntegerExpr 1]
+        it "should parse a method dispatch with multiple parameters and no tied expression" $
+          "foo(1, bar)" `testExpression`
+          MethodDispatch SelfVarExpr (Identifier "foo") [IntegerExpr 1, IdentifierExpr "bar"]
+        it "should parse a method dispatch with multiple parameters and no tied expression" $
+          "foo.call(1, bar)" `testExpression`
+          MethodDispatch (IdentifierExpr "foo") (Identifier "call") [IntegerExpr 1, IdentifierExpr "bar"]
     describe "features" $ do
       it "should parse a feature" $ testFeature "foo : Foo" $ Attribute (Identifier "foo") (Type "Foo") Nothing
       it "should parse a feature assigned to an expression" $

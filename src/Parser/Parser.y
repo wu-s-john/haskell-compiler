@@ -38,6 +38,7 @@ import Parser.TerminalNode
       ';'             { T.SemicolonOperator {} }
       '~'             { T.TildeOperator {} }
       ','             { T.CommaOperator {} }
+      '.'             { T.PeriodOperator {} }
       'isvoid'        { T.IsvoidKeyword {}}
       'class'         { T.ClassKeyword {} }
       'inherits'      { T.InheritsKeyword {} }
@@ -52,7 +53,7 @@ import Parser.TerminalNode
       typeID          { T.TypeIdentifier {} }
       string          { T.StringLiteral {} }
 
-%right expr
+%left '.'
 %left '~'
 %left 'isvoid'
 %left '+' '-'
@@ -100,9 +101,29 @@ caseBranches :
                 caseBranch               { [ $1 ]}
               | caseBranches caseBranch  { $1 ++ [$2] }
 
+methodInputs :: { [Expression] }
+methodInputs :
+                expr                    { [ $1 ] }
+              | methodInputs ',' expr   { $1 ++ [$3]}
+
+optionalMethodInputs :: { [Expression] }
+optionalMethodInputs :
+              {- empty -}               { [] }
+            | methodInputs              { $1 }
+
 expr :: { Expression }
 expr  :
-        expr '+' expr           { BinaryOp PlusTerminal $1 $3 }
+        expr '.'
+        objectID '('
+        optionalMethodInputs
+        ')'                     { MethodDispatch $1 (Identifier (T.getName $3)) $5 }
+      | objectID '('
+        optionalMethodInputs
+        ')'                     { MethodDispatch SelfVarExpr (Identifier (T.getName $1)) $3 }
+      | 'let' letBinding        { LetExpression $2 }
+      | 'case' expr 'of'
+      caseBranches 'esac'       { TypeCaseExpression $2 $4 }
+      | expr '+' expr           { BinaryOp PlusTerminal $1 $3 }
       | expr '-' expr           { BinaryOp MinusTerminal $1 $3 }
       | expr '*' expr           { BinaryOp TimesTerminal $1 $3 }
       | expr '/' expr           { BinaryOp DivideTerminal $1 $3 }
@@ -119,8 +140,6 @@ expr  :
       | objectID                { IdentifierExpr (T.getName $1) }
       | '(' expr ')'            { $2 }
       | '{' exprs '}'           { BlockExpression $2 }
-      | 'let' letBinding        { LetExpression $2 }
-      | 'case' expr 'of' caseBranches 'esac' { TypeCaseExpression $2 $4 }
       | string                  { StringExpr (T.getStrVal $1)}
 
 {

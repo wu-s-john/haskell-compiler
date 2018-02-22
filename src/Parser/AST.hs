@@ -44,6 +44,7 @@ data Expression
             , getExpr :: Expression }
   | IntegerExpr Int
   | IdentifierExpr String
+  | SelfVarExpr
   | StringExpr String
   | BlockExpression [Expression]
   | AssignmentExpression { getLeft :: Expression
@@ -51,4 +52,5 @@ data Expression
   | NewExpression { getType :: Type }
   | LetExpression LetBinding
   | TypeCaseExpression Expression [CaseBranch]
+  | MethodDispatch Expression Identifier [Expression]
   deriving (Show, Read, Eq)
