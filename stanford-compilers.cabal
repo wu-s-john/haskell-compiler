@@ -23,9 +23,9 @@ library
                      , Lexer.LexerUtil
                      , Parser.AST
                      , Parser.TerminalNode
-                     , Parser.TerminalNodeUtil
                      , Parser.Parser
                      , Parser.ParserUtil
+                     , SemanticAnalyzer.ClassChecker
 
   build-depends:       base >= 4.7 && < 5
                      , parsec

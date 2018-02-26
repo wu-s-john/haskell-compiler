@@ -11,7 +11,6 @@ import Parser.Parser
        (classParser, expressionParser, featureParser, featuresParser,
         programParser)
 import Parser.ParserUtil
-import Parser.TerminalNode
 import Test.Hspec
        (Expectation, Spec, anyException, describe, hspec, it, shouldBe,
         shouldThrow)
@@ -24,59 +23,43 @@ spec =
   describe "parser" $
   describe "unit-tests" $ do
     describe "expressions" $ do
-      it "should parse <-" $ "foo <- 2" `testExpression` AssignmentExpr (Identifier "foo") (IntegerExpr 2)
+      it "should parse <-" $ "foo <- 2" `testExpression` AssignmentExpr "foo" (IntegerExpr 2)
       describe "dispatch" $ do
         it "should parse a method  dispatch with no calls and no tied expression" $
-          "foo()" `testExpression` MethodDispatch SelfVarExpr (Identifier "foo") []
+          "foo()" `testExpression` MethodDispatch SelfVarExpr "foo" []
         it "should parse a method  dispatch with one parameter and no tied expression" $
-          "foo(1)" `testExpression` MethodDispatch SelfVarExpr (Identifier "foo") [IntegerExpr 1]
+          "foo(1)" `testExpression` MethodDispatch SelfVarExpr "foo" [IntegerExpr 1]
         it "should parse a method dispatch with multiple parameters and no tied expression" $
-          "foo(1, bar)" `testExpression`
-          MethodDispatch SelfVarExpr (Identifier "foo") [IntegerExpr 1, IdentifierExpr "bar"]
+          "foo(1, bar)" `testExpression` MethodDispatch SelfVarExpr "foo" [IntegerExpr 1, IdentifierExpr "bar"]
         it "should parse a method dispatch with multiple parameters and no tied expression" $
           "foo.call(1, bar)" `testExpression`
-          MethodDispatch (IdentifierExpr "foo") (Identifier "call") [IntegerExpr 1, IdentifierExpr "bar"]
+          MethodDispatch (IdentifierExpr "foo") "call" [IntegerExpr 1, IdentifierExpr "bar"]
         it "should call parse a method with multiple parameters and a call to static methods" $
           "foo@Foo.call(1, bar)" `testExpression`
-          StaticMethodDispatch
-            (IdentifierExpr "foo")
-            (Type "Foo")
-            (Identifier "call")
-            [IntegerExpr 1, IdentifierExpr "bar"]
+          StaticMethodDispatch (IdentifierExpr "foo") "Foo" "call" [IntegerExpr 1, IdentifierExpr "bar"]
       it "should parse a while loop" $
-        "while true loop foo() pool" `testExpression`
-        LoopExpr TrueExpr (MethodDispatch SelfVarExpr (Identifier "foo") [])
+        "while true loop foo() pool" `testExpression` LoopExpr TrueExpr (MethodDispatch SelfVarExpr "foo" [])
       it "should parse conditional expressions" $
         "if 1 then \"foo\" else \"bar\" fi" `testExpression`
         CondExpr (IntegerExpr 1) (StringExpr "foo") (StringExpr "bar")
       it "should parse a block" $ "{ 6; foo; }" `testExpression` BlockExpr [IntegerExpr 6, IdentifierExpr "foo"]
       describe "let" $ do
         it "should parse a let expression with no expression" $
-          "let foo : Bar in foo" `testExpression`
-          LetExpr (LetBinding (Identifier "foo") (Type "Bar") Nothing (IdentifierExpr "foo"))
+          "let foo : Bar in foo" `testExpression` LetExpr (LetBinding "foo" "Bar" Nothing (IdentifierExpr "foo"))
         it "should parse a let expression that has an initialized expression expression" $
           "let foo : Bar <- baz in foo" `testExpression`
-          LetExpr (LetBinding (Identifier "foo") (Type "Bar") (Just (IdentifierExpr "baz")) (IdentifierExpr "foo"))
+          LetExpr (LetBinding "foo" "Bar" (Just (IdentifierExpr "baz")) (IdentifierExpr "foo"))
         it "should parse a let with multiple declaractions" $
           "let x:Int <- 5, z:Int in x" `testExpression`
-          LetExpr
-            (LetDeclaration
-               (Identifier "x")
-               (Type "Int")
-               (Just (IntegerExpr 5))
-               (LetBinding (Identifier "z") (Type "Int") Nothing (IdentifierExpr "x")))
+          LetExpr (LetDeclaration "x" "Int" (Just (IntegerExpr 5)) (LetBinding "z" "Int" Nothing (IdentifierExpr "x")))
         it "should parse a let with multiple declaractions" $
           "let x:Int <- 5, y:String, z:Int in x" `testExpression`
           LetExpr
             (LetDeclaration
-               (Identifier "x")
-               (Type "Int")
+               "x"
+               "Int"
                (Just (IntegerExpr 5))
-               (LetDeclaration
-                  (Identifier "y")
-                  (Type "String")
-                  Nothing
-                  (LetBinding (Identifier "z") (Type "Int") Nothing (IdentifierExpr "x"))))
+               (LetDeclaration "y" "String" Nothing (LetBinding "z" "Int" Nothing (IdentifierExpr "x"))))
         it "should create an error if let has no identifier bindings" $
           evaluate (stringToAST expressionParser "let in x") `shouldThrow` anyException
       describe "typecases" $ do
@@ -84,12 +67,10 @@ spec =
           "case foo of x: Int => 3; y: String => \"foo\"; esac " `testExpression`
           TypeCaseExpr
             (IdentifierExpr "foo")
-            [ CaseBranch (Identifier "x") (Type "Int") (IntegerExpr 3)
-            , CaseBranch (Identifier "y") (Type "String") (StringExpr "foo")
-            ]
+            [CaseBranch "x" "Int" (IntegerExpr 3), CaseBranch "y" "String" (StringExpr "foo")]
         it "should create an error if there are no case branches" $
           evaluate (stringToAST expressionParser "case foo of x: esac") `shouldThrow` anyException
-      it "should parse new" $ "new Foo" `testExpression` NewExpr (Type "Foo")
+      it "should parse new" $ "new Foo" `testExpression` NewExpr "Foo"
       it "should parse isvoid" $ "isvoid foo" `testExpression` IsvoidExpr (IdentifierExpr "foo")
       it "should parse a binary expression" $
         "1 + 2 * 5" `testExpression` PlusExpr (IntegerExpr 1) (TimesExpr (IntegerExpr 2) (IntegerExpr 5))
@@ -105,56 +86,32 @@ spec =
       it "should parse a true" $ "true" `testExpression` TrueExpr
       it "should parse a false" $ "false" `testExpression` FalseExpr
     describe "features" $ do
-      it "should parse a feature attribute" $ "foo : Foo" `testFeature` createAttribute "foo" "Foo" Nothing
+      it "should parse a feature attribute" $ "foo : Foo" `testFeature` Attribute "foo" "Foo" Nothing
       it "should parse a feature attribute assigned to an expression" $
-        "foo : Foo <- bar" `testFeature` createAttribute "foo" "Foo" (Just (IdentifierExpr "bar"))
+        "foo : Foo <- bar" `testFeature` Attribute "foo" "Foo" (Just (IdentifierExpr "bar"))
       describe "methods" $ do
         it "should parse a feature method with no parameters" $
-          "call() : Foo {\"string\"}" `testFeature` createMethod "call" "Foo" [] (StringExpr "string")
+          "call() : Foo {\"string\"}" `testFeature` Method "call" [] "Foo" (StringExpr "string")
         it "should parse a feature method with one parameter" $
-          "identity(x: Int) : Int { x }" `testFeature`
-          createMethod "identity" "Int" [createFormal "x" "Int"] (IdentifierExpr "x")
+          "identity(x: Int) : Int { x }" `testFeature` Method "identity" [Formal "x" "Int"] "Int" (IdentifierExpr "x")
         it "should parse a feature method with multiple parameters" $
           "sum(x : Int, y : Int) : Int { x + y }" `testFeature`
-          createMethod
-            "sum"
-            "Int"
-            [createFormal "x" "Int", createFormal "y" "Int"]
-            (PlusExpr (IdentifierExpr "x") (IdentifierExpr "y"))
+          Method "sum" [Formal "x" "Int", Formal "y" "Int"] "Int" (PlusExpr (IdentifierExpr "x") (IdentifierExpr "y"))
       it "should parse a multiple features" $
         testParser
           (stringToAST featuresParser)
           "foo : Foo <- bar; \n    x : Y;\n"
-          [createAttribute "foo" "Foo" (Just (IdentifierExpr "bar")), createAttribute "x" "Y" Nothing]
+          [Attribute "foo" "Foo" (Just (IdentifierExpr "bar")), Attribute "x" "Y" Nothing]
     describe "class" $ do
-      it "should parse an orphaned class" $ testClass "class Foo {\n\n}\n" (Class (Type "Foo") (Type "Object") [])
-      it "should parse an inherited class" $
-        testClass "class Foo inherits Bar {\n\n}\n" (Class (Type "Foo") (Type "Bar") [])
+      it "should parse an orphaned class" $ testClass "class Foo {\n\n}\n" (Class "Foo" "Object" [])
+      it "should parse an inherited class" $ testClass "class Foo inherits Bar {\n\n}\n" (Class "Foo" "Bar" [])
     describe "program" $ do
       it "should parse a single program" $
         testProgram
           "class Hello {\n    foo : Int;\n    bar : String;\n};\n"
-          (Program
-             [ Class
-                 (Type "Hello")
-                 (Type "Object")
-                 [ Attribute (Identifier "foo") (Type "Int") Nothing
-                 , Attribute (Identifier "bar") (Type "String") Nothing
-                 ]
-             ])
+          (Program [Class "Hello" "Object" [Attribute "foo" "Int" Nothing, Attribute "bar" "String" Nothing]])
       it "should parse a single program" $
-        testProgram
-          "class Foo {}; class Bar {};\n"
-          (Program [Class (Type "Foo") (Type "Object") [], Class (Type "Bar") (Type "Object") []])
-
-createMethod :: String -> String -> [Formal] -> Expression -> Feature
-createMethod methodName typeName parameters = Method (Identifier methodName) parameters (Type typeName)
-
-createAttribute :: String -> String -> Maybe Expression -> Feature
-createAttribute attrName typeName = Attribute (Identifier attrName) (Type typeName)
-
-createFormal :: String -> String -> Formal
-createFormal identifierName typeName = Formal (Identifier identifierName) (Type typeName)
+        testProgram "class Foo {}; class Bar {};\n" (Program [Class "Foo" "Object" [], Class "Bar" "Object" []])
 
 testParser ::
      Show a

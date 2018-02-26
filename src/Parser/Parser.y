@@ -8,7 +8,6 @@ import Data.List
 import qualified Lexer.Token as T
 import Parser.AST
 import Parser.TerminalNode
-import Parser.TerminalNodeUtil
 }
 
 %name programParser program
@@ -81,8 +80,8 @@ program : class ';' { Program [$1] }
 
 class :: { Class }
 class :
-        'class' typeID '{' feats '}'    { Class (toType $2) (Type "Object") $4 }
-      | 'class' typeID  'inherits' typeID '{' feats '}'    { Class (toType $2) (toType $4) $6 }
+        'class' typeID '{' feats '}'    { Class (T.getName $2) "Object" $4 }
+      | 'class' typeID  'inherits' typeID '{' feats '}'    { Class (T.getName $2) (T.getName $4) $6 }
 
 feats :: { [Feature] }
 feats :
@@ -91,15 +90,15 @@ feats :
 
 feat :: { Feature }
 feat :
-        objectID ':' typeID opt_expr        { Attribute (toIdentifier $1) (toType $3) $4 }
+        objectID ':' typeID opt_expr        { Attribute (T.getName $1) (T.getName $3) $4 }
       | objectID
         '(' optMethodParameters ')'
         ':' typeID
-        '{' expr '}'                        { Method (toIdentifier $1) $3 (toType $6) $8}
+        '{' expr '}'                        { Method (T.getName $1) $3 (T.getName $6) $8}
 
 formal :: { Formal }
 formal :
-          objectID ':' typeID               { Formal (toIdentifier $1) (toType $3) }
+          objectID ':' typeID               { Formal (T.getName $1) (T.getName $3) }
 
 methodParameters :: { [Formal] }
 methodParameters :
@@ -121,14 +120,14 @@ exprs : expr ';'                  { [$1] }
 
 letBinding :: { LetBinding }
 letBinding :
-             objectID ':' typeID ',' letBinding           { LetDeclaration (toIdentifier $1) (toType $3) Nothing $5 }
-           | objectID ':' typeID '<-' expr ',' letBinding { LetDeclaration (toIdentifier $1) (toType $3) (Just $5) $7 }
-           | objectID ':' typeID 'in' expr                { LetBinding (toIdentifier $1) (toType $3) Nothing $5 }
-           | objectID ':' typeID '<-' expr 'in' expr      { LetBinding (toIdentifier $1) (toType $3) (Just $5) $7 }
+             objectID ':' typeID ',' letBinding           { LetDeclaration (T.getName $1) (T.getName $3) Nothing $5 }
+           | objectID ':' typeID '<-' expr ',' letBinding { LetDeclaration (T.getName $1) (T.getName $3) (Just $5) $7 }
+           | objectID ':' typeID 'in' expr                { LetBinding (T.getName $1) (T.getName $3) Nothing $5 }
+           | objectID ':' typeID '<-' expr 'in' expr      { LetBinding (T.getName $1) (T.getName $3) (Just $5) $7 }
 
 caseBranch :: { CaseBranch }
 caseBranch :
-            objectID ':' typeID  '=>' expr ';' {CaseBranch (toIdentifier $1) (toType $3) $5 }
+            objectID ':' typeID  '=>' expr ';' {CaseBranch (T.getName $1) (T.getName $3) $5 }
 
 caseBranches :: { [CaseBranch] }
 caseBranches :
@@ -150,20 +149,20 @@ staticDispatch :
         expr '@' typeID '.'
               objectID '('
               optMethodInputs
-              ')'                     { StaticMethodDispatch $1 (toType $3) (toIdentifier $5) $7 }
+              ')'                     { StaticMethodDispatch $1 (T.getName $3) (T.getName $5) $7 }
       | expr '.'
             objectID '('
             optMethodInputs
-            ')'                       { MethodDispatch $1 (toIdentifier $3) $5 }
+            ')'                       { MethodDispatch $1 (T.getName $3) $5 }
 
 expr :: { Expression }
 expr  :
 
-        objectID '<-' expr      { AssignmentExpr (toIdentifier $1) $3 }
+        objectID '<-' expr      { AssignmentExpr (T.getName $1) $3 }
       | staticDispatch          { $1 }
       | objectID '('
         optMethodInputs
-        ')'                     { MethodDispatch SelfVarExpr (toIdentifier $1) $3 }
+        ')'                     { MethodDispatch SelfVarExpr (T.getName $1) $3 }
       | 'if' expr 'then'
         expr 'else' expr 'fi'   { CondExpr $2 $4 $6 }
       | 'while' expr
@@ -173,7 +172,7 @@ expr  :
       | 'let' letBinding        { LetExpr $2 }
       | 'case' expr 'of'
          caseBranches 'esac'    { TypeCaseExpr $2 $4 }
-      | 'new' typeID            { NewExpr (toType $2) }
+      | 'new' typeID            { NewExpr (T.getName $2) }
       | 'isvoid' expr           { IsvoidExpr $2 }
       | expr '+' expr           { PlusExpr $1 $3 }
       | expr '-' expr           { MinusExpr $1 $3 }
