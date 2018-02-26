@@ -127,16 +127,17 @@ spec =
           "foo : Foo <- bar; \n    x : Y;\n"
           [createAttribute "foo" "Foo" (Just (IdentifierExpr "bar")), createAttribute "x" "Y" Nothing]
     describe "class" $ do
-      it "should parse an orphaned class" $ testClass "class Foo {\n\n}\n" (OrphanedClass (Type "Foo") [])
+      it "should parse an orphaned class" $ testClass "class Foo {\n\n}\n" (Class (Type "Foo") (Type "Object") [])
       it "should parse an inherited class" $
-        testClass "class Foo inherits Bar {\n\n}\n" (InheritedClass (Type "Foo") (Type "Bar") [])
+        testClass "class Foo inherits Bar {\n\n}\n" (Class (Type "Foo") (Type "Bar") [])
     describe "program" $ do
       it "should parse a single program" $
         testProgram
           "class Hello {\n    foo : Int;\n    bar : String;\n};\n"
           (Program
-             [ OrphanedClass
+             [ Class
                  (Type "Hello")
+                 (Type "Object")
                  [ Attribute (Identifier "foo") (Type "Int") Nothing
                  , Attribute (Identifier "bar") (Type "String") Nothing
                  ]
@@ -144,7 +145,7 @@ spec =
       it "should parse a single program" $
         testProgram
           "class Foo {}; class Bar {};\n"
-          (Program [OrphanedClass (Type "Foo") [], OrphanedClass (Type "Bar") []])
+          (Program [Class (Type "Foo") (Type "Object") [], Class (Type "Bar") (Type "Object") []])
 
 createMethod :: String -> String -> [Formal] -> Expression -> Feature
 createMethod methodName typeName parameters = Method (Identifier methodName) parameters (Type typeName)

@@ -81,8 +81,8 @@ program : class ';' { Program [$1] }
 
 class :: { Class }
 class :
-        'class' typeID '{' feats '}'    { OrphanedClass (toType $2) $4 }
-      | 'class' typeID  'inherits' typeID '{' feats '}'    { InheritedClass (toType $2) (toType $4) $6 }
+        'class' typeID '{' feats '}'    { Class (toType $2) (Type "Object") $4 }
+      | 'class' typeID  'inherits' typeID '{' feats '}'    { Class (toType $2) (toType $4) $6 }
 
 feats :: { [Feature] }
 feats :

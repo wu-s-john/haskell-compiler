@@ -9,13 +9,11 @@ newtype Program = Program
   { getClasses :: [Class]
   } deriving (Show, Read, Eq)
 
-data Class
-  = OrphanedClass { getClassName :: Type
-                  , getFeatures :: [Feature] }
-  | InheritedClass { getClassName :: Type
-                   , getInheritName :: Type
-                   , getFeatures :: [Feature] }
-  deriving (Show, Read, Eq)
+data Class = Class
+  { getClassName :: Type
+  , getInheritName :: Type
+  , getFeatures :: [Feature]
+  } deriving (Show, Read, Eq)
 
 data Feature
   = Attribute { getName :: Identifier
