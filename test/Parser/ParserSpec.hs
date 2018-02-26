@@ -8,7 +8,8 @@ module Parser.ParserSpec
 import Control.Exception (evaluate)
 import Parser.AST
 import Parser.Parser
-       (classParser, expressionParser, featureParser, featuresParser)
+       (classParser, expressionParser, featureParser, featuresParser,
+        programParser)
 import Parser.ParserUtil
 import Parser.TerminalNode
 import Test.Hspec
@@ -104,8 +105,7 @@ spec =
       it "should parse a true" $ "true" `testExpression` TrueExpr
       it "should parse a false" $ "false" `testExpression` FalseExpr
     describe "features" $ do
-      it "should parse a feature attribute" $
-        "foo : Foo" `testFeature` createAttribute "foo" "Foo" Nothing
+      it "should parse a feature attribute" $ "foo : Foo" `testFeature` createAttribute "foo" "Foo" Nothing
       it "should parse a feature attribute assigned to an expression" $
         "foo : Foo <- bar" `testFeature` createAttribute "foo" "Foo" (Just (IdentifierExpr "bar"))
       describe "methods" $ do
@@ -125,13 +125,26 @@ spec =
         testParser
           (stringToAST featuresParser)
           "foo : Foo <- bar; \n    x : Y;\n"
-          [ createAttribute "foo" "Foo" (Just (IdentifierExpr "bar"))
-          , createAttribute "x" "Y" Nothing
-          ]
+          [createAttribute "foo" "Foo" (Just (IdentifierExpr "bar")), createAttribute "x" "Y" Nothing]
     describe "class" $ do
       it "should parse an orphaned class" $ testClass "class Foo {\n\n}\n" (OrphanedClass (Type "Foo") [])
       it "should parse an inherited class" $
         testClass "class Foo inherits Bar {\n\n}\n" (InheritedClass (Type "Foo") (Type "Bar") [])
+    describe "program" $ do
+      it "should parse a single program" $
+        testProgram
+          "class Hello {\n    foo : Int;\n    bar : String;\n};\n"
+          (Program
+             [ OrphanedClass
+                 (Type "Hello")
+                 [ Attribute (Identifier "foo") (Type "Int") Nothing
+                 , Attribute (Identifier "bar") (Type "String") Nothing
+                 ]
+             ])
+      it "should parse a single program" $
+        testProgram
+          "class Foo {}; class Bar {};\n"
+          (Program [OrphanedClass (Type "Foo") [], OrphanedClass (Type "Bar") []])
 
 createMethod :: String -> String -> [Formal] -> Expression -> Feature
 createMethod methodName typeName parameters = Method (Identifier methodName) parameters (Type typeName)
@@ -156,3 +169,6 @@ testFeature = testParser (stringToAST featureParser)
 
 testExpression :: String -> Expression -> Expectation
 testExpression = testParser (stringToAST expressionParser)
+
+testProgram :: String -> Program -> Expectation
+testProgram = testParser (stringToAST programParser)

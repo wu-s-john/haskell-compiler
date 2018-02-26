@@ -11,7 +11,7 @@ import Parser.TerminalNode
 import Parser.TerminalNodeUtil
 }
 
-
+%name programParser program
 %name classParser class
 %name featureParser feat
 %name featuresParser feats
@@ -74,6 +74,10 @@ import Parser.TerminalNodeUtil
 %left 'not'
 %right  '<-'
 %%
+
+program :: { Program }
+program : class ';' { Program [$1] }
+        | program class ';'{ Program $ ((getClasses $1) ++ [$2])}
 
 class :: { Class }
 class :

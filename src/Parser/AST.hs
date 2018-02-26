@@ -5,6 +5,10 @@ module Parser.AST where
 
 import Parser.TerminalNode
 
+newtype Program = Program
+  { getClasses :: [Class]
+  } deriving (Show, Read, Eq)
+
 data Class
   = OrphanedClass { getClassName :: Type
                   , getFeatures :: [Feature] }
