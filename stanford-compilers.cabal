@@ -33,6 +33,7 @@ library
                      , mtl
                      , containers
                      , array
+                     , monad-loops
   default-language:    Haskell2010
 
 executable stanford-compilers
