@@ -6,15 +6,15 @@ module SemanticAnalyzer.ClassCheckerSpec
   ) where
 
 import Control.Monad.Reader (runReaderT)
-import Control.Monad.State (State(..), evalState, execState, put)
-import Control.Monad.Writer (execWriterT, runWriterT)
+import Control.Monad.State (State, evalState, execState)
+import Control.Monad.Writer (runWriter, runWriterT)
 import qualified Data.Map as M
-import qualified Data.Set as S
 import Parser.Parser (programParser)
 import Parser.ParserUtil (stringToAST)
 import Parser.TerminalNode (Type)
 import SemanticAnalyzer.ClassChecker
-import Test.Hspec (Spec, describe, hspec, it, shouldBe)
+import Test.Hspec
+       (Expectation, Spec, describe, hspec, it, shouldBe)
 
 main :: IO ()
 main = hspec spec
@@ -24,18 +24,19 @@ spec =
   describe "classChecker" $ do
     describe "createTypeMap" $ do
       it "should parse one class of a program into a Map" $
-        toClassInheritanceMap "class Foo {};" `shouldBe` (OK $ M.fromList [("Foo", "Object")])
+        testBuilder "class Foo {};" (M.fromList [("Foo", "Object")]) []
       it "should parse multiple classes of a program into a Map" $
-        toClassInheritanceMap "class A {}; class B inherits A {}; class C inherits B {}; class D inherits A {};" `shouldBe`
-        (OK $ M.fromList [("A", "Object"), ("B", "A"), ("C", "B"), ("D", "A")])
+        testBuilder
+          "class A {}; class B inherits A {}; class C inherits B {}; class D inherits A {};"
+          (M.fromList [("A", "Object"), ("B", "A"), ("C", "B"), ("D", "A")])
+          []
       it "should have an error invoked if a single class occurs multiple times" $
-        toClassInheritanceMap "class A {}; class A inherits B {}; " `shouldBe`
-        Error [PreviouslyDefined "A"] (M.fromList [("A", "Object")])
+        testBuilder "class A {}; class A inherits B {}; " (M.fromList [("A", "Object")]) [PreviouslyDefined "A"]
       it "should have an error invoked if multiple classes occurs multiple times" $
-        toClassInheritanceMap "class A inherits B {}; class A {}; class Foo {}; class Foo {}; class A {}; class A {};" `shouldBe`
-        Error
-          [PreviouslyDefined "A", PreviouslyDefined "A", PreviouslyDefined "Foo", PreviouslyDefined "A"]
+        testBuilder
+          "class A inherits B {}; class A {}; class Foo {}; class Foo {}; class A {}; class A {};"
           (M.fromList [("A", "B"), ("Foo", "Object")])
+          [PreviouslyDefined "A", PreviouslyDefined "Foo", PreviouslyDefined "A", PreviouslyDefined "A"]
     describe "checkPrimitiveInheritance" $ do
       it "should determine if a class inherited a primitive type (bool)" $
         checkPrimitiveInheritance "Bool" `shouldBe` True
@@ -56,47 +57,59 @@ spec =
         checkAcyclicErrors (M.fromList [("A", "Object")]) `shouldBe` []
       it "should have no errors if a graph forms a line" $
         checkAcyclicErrors (M.fromList [("A", "Object"), ("B", "A")]) `shouldBe` []
+      it "should have an error of an acyclic class" $
+        checkAcyclicErrors (M.fromList [("B", "A"), ("C", "B"), ("A", "C")]) `shouldBe` [InheritanceCycle "A"] -- todo should get inherit errors from A, B, C
       it "should have no errors if a graph forms a line" $
-        testPath
-          classGraph
-          (do put (AcyclicClassState S.empty (S.fromList ["A"]) S.empty)
-              return "D")
-          S.empty `shouldBe`
-        CyclicPath (S.fromList ["A", "D"])
-      it "should parse only A" $
-        testPath
-          classGraph
-          (do put (AcyclicClassState S.empty S.empty S.empty)
-              return "A")
-          S.empty `shouldBe`
-        AcyclicPath (S.fromList ["A"])
-      it "should parse only A and B" $
-       testPath
-         (M.fromList [("A", "Object"), ("B", "A"), ("C", "B")])
-         (do put (AcyclicClassState S.empty S.empty S.empty)
-             return "C")
-         S.empty `shouldBe`
-       AcyclicPath (S.fromList ["A", "B", "C"])
-      it "should have all classes identified if there a class is analyze as a table" $
-        testState classGraph acyclicAnalyzerBody `shouldBe` AcyclicClassState (M.keysSet classGraph) S.empty S.empty
+        computeClassInheritancePath (return "D") (AcyclicClassState [] ["A"]) classGraph `shouldBe` CyclicPath ["D"]
+      it "should parse only one class if it's parent is Object" $
+        computeClassInheritancePath (return "A") (AcyclicClassState [] []) classGraph `shouldBe` AcyclicPath ["A"]
+      it "should parse only a few classes if the first class is not a leaf class" $
+        computeClassInheritancePath
+          (return "C")
+          (AcyclicClassState [] [])
+          (M.fromList [("A", "Object"), ("B", "A"), ("C", "B")]) `shouldBe`
+        AcyclicPath ["A", "B", "C"]
+      it "should identify if there is a cycle" $
+        computeClassInheritancePath (return "B") (AcyclicClassState [] []) (M.fromList [("A", "B"), ("B", "A")]) `shouldBe`
+        CyclicPath ["A", "B"]
+      it "should identify a cycle if one the classes' parents is a cycle" $
+        computeClassInheritancePath
+          (return "C")
+          (AcyclicClassState [] ["A", "B"])
+          (M.fromList [("A", "B"), ("B", "A"), ("C", "B")]) `shouldBe`
+        CyclicPath ["C"]
+      it "should have all classes identified in a legal table" $
+        computeClassAnalyzer acyclicAnalyzer classGraph `shouldBe` AcyclicClassState ["A", "B", "C", "D"] []
+      it "should identify cycles" $
+        computeClassAnalyzer acyclicAnalyzer (M.fromList [("A", "B"), ("B", "C"), ("C", "A")]) `shouldBe`
+        AcyclicClassState [] ["C", "B", "A"]
   where
     classGraph = M.fromList [("A", "Object"), ("B", "A"), ("C", "B"), ("D", "A")]
 
-toClassInheritanceMap :: String -> ClassAnalysisResult
-toClassInheritanceMap = createTypeMap . stringToAST programParser
+testBuilder :: String -> ClassInheritanceGraph -> [ClassError] -> Expectation
+testBuilder program expectedMap expectedErrors = do
+  actualMap `shouldBe` expectedMap
+  actualErrors `shouldBe` expectedErrors
+  where
+    classGraphBuilder = toClassInheritanceMap program
+    (actualMap, actualErrors) = runWriter classGraphBuilder
 
-testPath :: ClassInheritanceGraph -> AcyclicClassChecker Type -> S.Set Type -> Path
-testPath classInheritanceGraph classAnalyzer visitedNodes =
-  testState' evalState classInheritanceGraph (checkPath classAnalyzer visitedNodes)
+toClassInheritanceMap :: String -> ClassGraphBuilder
+toClassInheritanceMap = createClassGraph . stringToAST programParser
 
 computeState :: ClassInheritanceGraph -> AcyclicClassChecker a -> State AcyclicClassState a
 computeState classGraph classAnalyzer = fst <$> runWriterT (runReaderT classAnalyzer classGraph)
 
-testState' ::
-     (State AcyclicClassState a -> AcyclicClassState -> b) -> ClassInheritanceGraph -> AcyclicClassChecker a -> b
-testState' f classGraph classAnalyzer =
-  let unseenNodes = (S.fromList . M.keys) classGraph
-  in f (computeState classGraph classAnalyzer) (AcyclicClassState S.empty S.empty unseenNodes)
+computeClassAnalyzer :: AcyclicClassChecker a -> ClassInheritanceGraph -> AcyclicClassState
+computeClassAnalyzer classChecker = runAnalyzer execState classChecker (AcyclicClassState [] [])
 
-testState :: ClassInheritanceGraph -> AcyclicClassChecker a -> AcyclicClassState
-testState = testState' execState
+runAnalyzer ::
+     (State AcyclicClassState a -> AcyclicClassState -> b)
+  -> AcyclicClassChecker a
+  -> AcyclicClassState
+  -> ClassInheritanceGraph
+  -> b
+runAnalyzer stateRunner classAnalyzer state classGraph = stateRunner (computeState classGraph classAnalyzer) state
+
+computeClassInheritancePath :: AcyclicClassChecker Type -> AcyclicClassState -> ClassInheritanceGraph -> Path
+computeClassInheritancePath classPathChecker = runAnalyzer evalState (checkPath classPathChecker [])
