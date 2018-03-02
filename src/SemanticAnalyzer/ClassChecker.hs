@@ -24,7 +24,13 @@ data ClassError
   deriving (Show, Eq)
 
 type ClassInheritanceGraph = M.Map Type Type
+
 type ClassGraphBuilder = Writer [ClassError] ClassInheritanceGraph
+
+data GraphCheckerResult
+  = Error [ClassError]
+  | Graph ClassInheritanceGraph
+  deriving (Show, Eq)
 
 data AcyclicClassState = AcyclicClassState
   { getVisitedNodes :: [Type]
@@ -51,7 +57,7 @@ checkIllegalInheritance graph = foldr buildErrors [] (M.toList graph)
   where
     buildErrors (className, parentName) accList
       | checkPrimitiveInheritance parentName = PrimitiveInheritance className parentName : accList
-      | M.notMember parentName graph = UndefinedInheritance className parentName : accList
+      | M.notMember parentName graph && parentName /= "Object" = UndefinedInheritance className parentName : accList
       | otherwise = accList
 
 checkPrimitiveInheritance :: Type -> Bool
@@ -89,7 +95,29 @@ checkPath classChecker classPath = do
     "Object" -> return $ AcyclicPath classPath
     class'
       | class' `elem` visitedNodes -> return $ AcyclicPath classPath
-      | class' `elem` cycleNodes || class' `elem` classPath -> do
+      | class' `elem` classPath -> do
         tell [InheritanceCycle class']
         return $ CyclicPath classPath
-      | otherwise -> checkPath (return (classGraph M.! currentClass)) (currentClass : classPath)
+      | class' `elem` cycleNodes -> return $ CyclicPath classPath
+      | otherwise -> checkParentPath classGraph currentClass
+  where
+    checkParentPath classGraph currentClass = do
+      subresult <- checkPath (return (classGraph M.! currentClass)) (currentClass : classPath)
+      case subresult of
+        CyclicPath parentPath ->
+          when (notElem currentClass parentPath) (tell [InheritanceCycle currentClass]) >>
+          return (CyclicPath parentPath)
+        AcyclicPath parentPath -> return (AcyclicPath parentPath)
+
+checkAndVerifyClassGraph :: Program -> GraphCheckerResult
+checkAndVerifyClassGraph program =
+  let (graph, previouslyDefinedClassErrors) = runWriter (createClassGraph program)
+      errors = previouslyDefinedClassErrors ++ checkIllegalInheritance graph
+  in case errors of
+       [] -> findCyclicErrors graph
+       _ -> Error errors
+  where
+    findCyclicErrors graph =
+      case checkAcyclicErrors graph of
+        [] -> Graph graph
+        errors -> Error errors

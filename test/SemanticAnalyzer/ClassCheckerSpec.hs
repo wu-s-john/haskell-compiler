@@ -19,6 +19,15 @@ import Test.Hspec
 main :: IO ()
 main = hspec spec
 
+testDirectory :: FilePath
+testDirectory = "test/SemanticAnalyzer/Files/"
+
+correctTestDirectory :: FilePath
+correctTestDirectory = testDirectory ++ "Correct/"
+
+errorTestDirectory :: FilePath
+errorTestDirectory = testDirectory ++ "Error/ClassInheritance/"
+
 spec :: Spec
 spec =
   describe "classChecker" $ do
@@ -58,7 +67,7 @@ spec =
       it "should have no errors if a graph forms a line" $
         checkAcyclicErrors (M.fromList [("A", "Object"), ("B", "A")]) `shouldBe` []
       it "should have an error of an acyclic class" $
-        checkAcyclicErrors (M.fromList [("B", "A"), ("C", "B"), ("A", "C")]) `shouldBe` [InheritanceCycle "A"] -- todo should get inherit errors from A, B, C
+        checkAcyclicErrors (M.fromList [("B", "A"), ("C", "B"), ("A", "C")]) `shouldBe` [InheritanceCycle "A"]
       it "should have no errors if a graph forms a line" $
         computeClassInheritancePath (return "D") (AcyclicClassState [] ["A"]) classGraph `shouldBe` CyclicPath ["D"]
       it "should parse only one class if it's parent is Object" $
@@ -83,9 +92,30 @@ spec =
       it "should identify cycles" $
         computeClassAnalyzer acyclicAnalyzer (M.fromList [("A", "B"), ("B", "C"), ("C", "A")]) `shouldBe`
         AcyclicClassState [] ["C", "B", "A"]
+      it "should identify cycles where a class has a parent that is involved in a cycle" $
+        computeClassAnalyzer acyclicAnalyzer (M.fromList [("A", "B"), ("B", "C"), ("C", "A")]) `shouldBe`
+        AcyclicClassState [] ["C", "B", "A"]
+    describe "createAndVerifyGraph" $ do
+      it "should successfuly build a graph" $
+        (correctTestDirectory ++ "LegalInheritance.cl") `testGraphFile` Graph classGraph
+      it "should identify UndefinedInheritance/PrimitiveInheritance/PreviouslyDefined errors" $
+        (errorTestDirectory ++ "IllegalInheritanceErrors.cl") `testGraphFile`
+        Error
+          [ PreviouslyDefined "A"
+          , PrimitiveInheritance "A" "Bool"
+          , UndefinedInheritance "B" "Foo"
+          , PrimitiveInheritance "C" "SELF_TYPE"
+          ]
+      it "should identify UndefinedInheritance/PrimitiveInheritance/PreviouslyDefined errors, but not cyclic errors" $
+        (errorTestDirectory ++ "PrimitiveErrorButNoCycle.cl") `testGraphFile` Error [PrimitiveInheritance "D" "Bool"]
   where
     classGraph = M.fromList [("A", "Object"), ("B", "A"), ("C", "B"), ("D", "A")]
+--      it "should identify cyclic errors" $
+--        (errorTestDirectory ++ "CyclicInheritance.cl") `testGraphFile`
+--        Error [InheritanceCycle "C", InheritanceCycle "B", InheritanceCycle "A"] --todo fix reporting
 
+--      it "should build an empty graph" $  "" `testGraphVerifier` Graph M.empty
+--      it "should identify cyclic errors"
 testBuilder :: String -> ClassInheritanceGraph -> [ClassError] -> Expectation
 testBuilder program expectedMap expectedErrors = do
   actualMap `shouldBe` expectedMap
@@ -96,6 +126,13 @@ testBuilder program expectedMap expectedErrors = do
 
 toClassInheritanceMap :: String -> ClassGraphBuilder
 toClassInheritanceMap = createClassGraph . stringToAST programParser
+
+testGraphVerifier :: String -> GraphCheckerResult -> Expectation
+testGraphVerifier code expectedResult =
+  checkAndVerifyClassGraph (stringToAST programParser code) `shouldBe` expectedResult
+
+testGraphFile :: FilePath -> GraphCheckerResult -> Expectation
+testGraphFile fileName expectedResults = readFile fileName >>= flip testGraphVerifier expectedResults
 
 computeState :: ClassInheritanceGraph -> AcyclicClassChecker a -> State AcyclicClassState a
 computeState classGraph classAnalyzer = fst <$> runWriterT (runReaderT classAnalyzer classGraph)
