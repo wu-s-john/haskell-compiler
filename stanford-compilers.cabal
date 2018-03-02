@@ -26,6 +26,7 @@ library
                      , Parser.Parser
                      , Parser.ParserUtil
                      , SemanticAnalyzer.ClassChecker
+                     , SemanticAnalyzer.Class
 
   build-depends:       base >= 4.7 && < 5
                      , parsec
