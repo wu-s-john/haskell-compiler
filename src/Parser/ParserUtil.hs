@@ -6,7 +6,7 @@ import Data.List (find)
 
 import Lexer.Lexer (runAlex, scanner)
 import Lexer.Token
-import Parser.Parser (programParser,featureParser)
+import Parser.Parser (programParser,featureParser, expressionParser)
 import Parser.AST
 
 scanErrors :: [Token] -> [Token]
@@ -31,3 +31,6 @@ parseProgram = stringToAST programParser
 
 parseFeature :: String -> Feature
 parseFeature = stringToAST featureParser
+
+parseExpression :: String -> Expression
+parseExpression = stringToAST expressionParser

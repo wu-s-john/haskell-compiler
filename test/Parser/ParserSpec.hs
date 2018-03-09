@@ -61,7 +61,7 @@ spec =
                (Just (IntegerExpr 5))
                (LetDeclaration "y" "String" Nothing (LetBinding "z" "Int" Nothing (IdentifierExpr "x"))))
         it "should create an error if let has no identifier bindings" $
-          evaluate (stringToAST expressionParser "let in x") `shouldThrow` anyException
+          evaluate (parseExpression "let in x") `shouldThrow` anyException
       describe "typecases" $ do
         it "should parse a type case" $
           "case foo of x: Int => 3; y: String => \"foo\"; esac " `testExpression`
@@ -69,7 +69,7 @@ spec =
             (IdentifierExpr "foo")
             [CaseBranch "x" "Int" (IntegerExpr 3), CaseBranch "y" "String" (StringExpr "foo")]
         it "should create an error if there are no case branches" $
-          evaluate (stringToAST expressionParser "case foo of x: esac") `shouldThrow` anyException
+          evaluate (parseExpression "case foo of x: esac") `shouldThrow` anyException
       it "should parse new" $ "new Foo" `testExpression` NewExpr "Foo"
       it "should parse isvoid" $ "isvoid foo" `testExpression` IsvoidExpr (IdentifierExpr "foo")
       it "should parse a binary expression" $
