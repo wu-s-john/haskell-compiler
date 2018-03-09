@@ -42,7 +42,7 @@ type MethodMap = M.Map T.Identifier MethodRecord
 type AttributeMap = M.Map T.Identifier AttributeRecord
 
 data ClassRecord
-  = ClassRecord { className :: T.Identifier
+  = ClassRecord { className :: T.Type
                 , parent :: ClassRecord
                 , methods :: MethodMap -- deal with Attributes
                 , attributes :: AttributeMap -- deal with Attributes
