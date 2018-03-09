@@ -4,9 +4,9 @@
 
 module Parser.AST where
 
-import Parser.TerminalNode
 import Data.Aeson (FromJSON)
 import GHC.Generics (Generic)
+import Parser.TerminalNode
 
 newtype Program = Program
   { getClasses :: [Class]
