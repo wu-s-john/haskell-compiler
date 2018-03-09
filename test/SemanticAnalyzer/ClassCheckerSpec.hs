@@ -9,8 +9,7 @@ import Control.Monad.Reader (runReaderT)
 import Control.Monad.State (State, evalState, execState)
 import Control.Monad.Writer (runWriter, runWriterT)
 import qualified Data.Map as M
-import Parser.Parser (programParser)
-import Parser.ParserUtil (stringToAST)
+import Parser.ParserUtil (stringToAST, parseProgram)
 import Parser.TerminalNode (Type)
 import SemanticAnalyzer.ClassChecker
 import Test.Hspec
@@ -125,11 +124,11 @@ testBuilder program expectedMap expectedErrors = do
     (actualMap, actualErrors) = runWriter classGraphBuilder
 
 toClassInheritanceMap :: String -> ClassGraphBuilder
-toClassInheritanceMap = createClassGraph . stringToAST programParser
+toClassInheritanceMap = createClassGraph . parseProgram
 
 testGraphVerifier :: String -> GraphCheckerResult -> Expectation
 testGraphVerifier code expectedResult =
-  checkAndVerifyClassGraph (stringToAST programParser code) `shouldBe` expectedResult
+  checkAndVerifyClassGraph (parseProgram code) `shouldBe` expectedResult
 
 testGraphFile :: FilePath -> GraphCheckerResult -> Expectation
 testGraphFile fileName expectedResults = readFile fileName >>= flip testGraphVerifier expectedResults

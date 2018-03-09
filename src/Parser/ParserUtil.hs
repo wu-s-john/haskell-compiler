@@ -6,6 +6,8 @@ import Data.List (find)
 
 import Lexer.Lexer (runAlex, scanner)
 import Lexer.Token
+import Parser.Parser (programParser,featureParser)
+import Parser.AST
 
 scanErrors :: [Token] -> [Token]
 scanErrors tokens =
@@ -23,3 +25,9 @@ stringToAST :: ([Token] -> a) -> String -> a
 stringToAST parser code = parser $
   case code `runAlex` scanner of
     Right tokens -> tokens
+
+parseProgram :: String -> Program
+parseProgram = stringToAST programParser
+
+parseFeature :: String -> Feature
+parseFeature = stringToAST featureParser

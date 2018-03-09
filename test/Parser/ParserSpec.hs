@@ -129,4 +129,4 @@ testExpression :: String -> Expression -> Expectation
 testExpression = testParser (stringToAST expressionParser)
 
 testProgram :: String -> Program -> Expectation
-testProgram = testParser (stringToAST programParser)
+testProgram = testParser parseProgram

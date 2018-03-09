@@ -35,6 +35,7 @@ library
                      , containers
                      , array
                      , monad-loops
+                     , aeson
   default-language:    Haskell2010
 
 executable stanford-compilers

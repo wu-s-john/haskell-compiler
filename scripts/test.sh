@@ -4,4 +4,4 @@
 #stack exec alex ./src/Lexer/Lexer.x;
 #stack exec -- happy --outfile ./src/Parser/Parser.hs ./src/Parser/Parser.y;
 #echo "Starting tests"
-stack test
+stack test --fast
