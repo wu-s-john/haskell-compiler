@@ -48,9 +48,9 @@ data ClassRecord
                 , attributes :: AttributeMap -- deal with Attributes
                  }
   | ObjectClass
+  | BasicClass { className :: T.Type, methods :: MethodMap } --todo include default values for code translation
+  -- todo include IO which only has a class name and methods
   deriving (Show, Eq, Generic)
-
-instance FromJSON ClassRecord
 
 extractMethodRecord :: AST.Feature -> Maybe MethodRecord
 extractMethodRecord feature =

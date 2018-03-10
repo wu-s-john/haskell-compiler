@@ -28,6 +28,8 @@ library
                      , SemanticAnalyzer.ClassChecker
                      , SemanticAnalyzer.Class
                      , SemanticAnalyzer.TypedAST
+                     , SemanticAnalyzer.InitialClassEnvironment
+                     , Util
 
   build-depends:       base >= 4.7 && < 5
                      , parsec

@@ -7,61 +7,136 @@ module SemanticAnalyzer.TypedASTSpec
   , spec
   ) where
 
-import Control.Monad.Reader (Reader, runReader)
-import Control.Monad.State (evalState)
+import Control.Monad.Reader (Reader, runReader, runReaderT)
+import Control.Monad.State (evalState, get)
 import Control.Monad.Writer (runWriterT)
+import Data.Map as M
+import Parser.AST as AST
 import Parser.ParserUtil (parseExpression)
-import SemanticAnalyzer.Class (ClassEnvironment, ClassRecord(..))
-import SemanticAnalyzer.TypedAST
-       (ExpressionT(..), SemanticError(..), (<==), semanticCheck,(\/))
-import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 import Parser.TerminalNode as T
+import SemanticAnalyzer.Class (ClassEnvironment, ClassRecord(..))
+import SemanticAnalyzer.InitialClassEnvironment
+import SemanticAnalyzer.TypedAST
+       (ExpressionT(..), LetBindingT(..), ObjectEnvironment,
+        SemanticAnalyzer, SemanticError(..), (/>), (<==), (\/),
+        semanticCheck)
+import Test.Hspec (Spec, describe, hspec, it, shouldBe)
+import Util
 
 main :: IO ()
 main = hspec spec
-
-(=:) :: a -> b -> (a, b)
-a =: b = (a, b)
 
 fooClassRecord :: ClassRecord
 fooClassRecord = ClassRecord "Foo" ObjectClass [] []
 
 classEnvironment :: ClassEnvironment
-classEnvironment = ["Foo" =: fooClassRecord, "Bar" =: ClassRecord "Bar" fooClassRecord [] []]
+classEnvironment =
+  initialClassEnvironment `M.union` ["Foo" =: fooClassRecord, "Bar" =: ClassRecord "Bar" fooClassRecord [] []]
+
+classEnvironmentWithInheritedBasicClass :: ClassEnvironment
+classEnvironmentWithInheritedBasicClass = classEnvironment `M.union` ["Baz" =: ClassRecord "Baz" intRecord [] []]
 
 spec :: Spec
 spec =
   describe "Semantic Analysis" $ do
     describe " binary arithmetic" $ do
       it "should annotate correctly a plus operator" $
-        testAnalyzer [] "1 + 2" (PlusExprT (IntegerExprT 1) (IntegerExprT 2), [])
+        testAnalyzer [] [] "1 + 2" (PlusExprT (IntegerExprT 1) (IntegerExprT 2), [])
       it "should parse an error of a plus operator" $
         testAnalyzer
+          []
           []
           "\"string\" + 2"
           (PlusExprT (StringExprT "string") (IntegerExprT 2), [NonIntArgumentsPlus "String" "Int"])
     describe "identifier" $ do
-      it "should find the type of a variable" $ testAnalyzer ["foo" =: "Foo"] "foo" (IdentifierExprT "foo" "Foo", [])
+      it "should find the type of a variable" $ testAnalyzer [] ["foo" =: "Foo"] "foo" (IdentifierExprT "foo" "Foo", [])
       it "should throw an error when identifier is not in the object environment" $
-        testAnalyzer [] "foo" (IdentifierExprT "foo" "Object", [UndeclaredIdentifier "foo"])
-    describe "isSubtype" $ do
+        testAnalyzer [] [] "foo" (IdentifierExprT "foo" "Object", [UndeclaredIdentifier "foo"])
+    describe "let expression" $
+      describe "letBindingT" $ do
+        describe "initial expression is a subtype of it's declared variable" $ do
+          it "declared variable is not initialized but is used properly" $
+            testAnalyzer
+              classEnvironment
+              []
+              "let x : Int in x + 5"
+              (LetExprT $ LetBindingT "x" "Int" Nothing (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5)), [])
+          it "declared variable is used properly" $
+            testAnalyzer
+              classEnvironment
+              []
+              "let x : Int <- 4 in x + 5"
+              ( LetExprT $
+                LetBindingT "x" "Int" (Just $ IntegerExprT 4) (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5))
+              , [])
+          it "declared variable is not used" $
+            testAnalyzer
+              classEnvironment
+              []
+              "let x : Int <- 4 in 5"
+              (LetExprT $ LetBindingT "x" "Int" (Just $ IntegerExprT 4) (IntegerExprT 5), [])
+          it "overrides variable that was previously declared" $
+            testAnalyzer
+              classEnvironment
+              ["x" =: "String"]
+              "let x : Int <- 4 in x"
+              (LetExprT $ LetBindingT "x" "Int" (Just $ IntegerExprT 4) (IdentifierExprT "x" "Int"), [])
+        describe "expression is not a subtype of it's declared variable" $
+          it "declared variable is still follows it's typing" $
+            testAnalyzer
+              classEnvironment
+              []
+              "let x : Int <- \"Hello World\" in x + 5"
+              ( LetExprT $
+                LetBindingT
+                  "x"
+                  "Int"
+                  (Just $ StringExprT "Hello World")
+                  (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5))
+              , [MismatchDeclarationType "String" "Int"])
+    describe "/>" $
+      it "should set a new variable and is applied only to an inner scope" $
+      fst $
+      applyParameters [] [] $ do
+        _ <- ("x", "Int") /> (get >>= (\objectEnvironment -> return $ "x" `M.member` objectEnvironment `shouldBe` True))
+        objectEnvironment <- get
+        return $ "x" `M.member` objectEnvironment `shouldBe` False
+    describe "isSubtype" $ -- todo separate the cases for (String and Int) with IO
+     do
+      it "a basic class should be a subtype of object" $ testSubtype classEnvironment "String" "Object" True
+      it "a basic class should not be a subtype of any constructed type" $
+        testSubtype classEnvironment "String" "Foo" False
+      it "a basic class should be a subtype of a basic class if they are the same" $
+        testSubtype classEnvironment "String" "String" True
+      it "a basic class should not be a subtype of a basic class if they are not the same" $
+        testSubtype classEnvironment "String" "Int" False
+      it "a class record should be a subtype of a basic class only if it inherits the class" $
+        testSubtype classEnvironmentWithInheritedBasicClass "Baz" "Int" True
+      it "a class record should not be a subtype of a basic class if it does not inherit the class" $
+        testSubtype classEnvironment "Baz" "Int" False
       it "should return true if two types are subtypes of each other" $ testSubtype classEnvironment "Bar" "Foo" True
       it "should return false if two types are not subtypes of each other" $
         testSubtype classEnvironment "Foo" "Bar" False
-      it "should return false if the possible subtype is undefined" $
-        testSubtype classEnvironment "X" "Foo" False
-      it "should return false if the parent is undefined" $
-        testSubtype classEnvironment "Foo" "X" False
+      it "should return false if the possible subtype is undefined" $ testSubtype classEnvironment "X" "Foo" False
+      it "should return false if the parent is undefined" $ testSubtype classEnvironment "Foo" "X" False
       it "should return true if the parent subtype is Object" $ testSubtype classEnvironment "Foo" "Object" True
     describe "lub (lowest upper bound)" $ do
       it "should return object if two types do not share the same ancestors" $
         testUpperBound classEnvironment "Foo" "X" "Object"
       it "should compute the lub of two types that share the same ancestors" $
         testUpperBound classEnvironment "Foo" "Foo" "Foo"
+      it "should have the lub of a basic class and an object that doesn't inherit from a basic class be an Object" $
+        testUpperBound classEnvironment "Foo" "Int" "Object"
+      it "should have the lub of a basic class and an object that inherits from a basic class be the basic class" $
+        testUpperBound classEnvironmentWithInheritedBasicClass "Baz" "Int" "Int"
   where
-    testAnalyzer objectEnvironment sourceCode result =
-      evalState (runWriterT (semanticCheck (parseExpression sourceCode))) objectEnvironment `shouldBe` result
+    testAnalyzer classEnvironment objectEnvironment sourceCode result =
+      applyParameters classEnvironment objectEnvironment (semanticCheck (parseExpression sourceCode)) `shouldBe` result
     testSubtype classEnvironment' possibleSubType parentType result =
       runReader ((possibleSubType <== parentType) :: Reader ClassEnvironment Bool) classEnvironment' `shouldBe` result
     testUpperBound classEnvironment' possibleSubType parentType result =
       runReader ((possibleSubType \/ parentType) :: Reader ClassEnvironment T.Type) classEnvironment' `shouldBe` result
+
+applyParameters :: ClassEnvironment -> ObjectEnvironment -> SemanticAnalyzer a -> (a, [SemanticError])
+applyParameters classEnvironment objectEnvironment semanticAnalyzer =
+  evalState (runWriterT (runReaderT semanticAnalyzer classEnvironment)) objectEnvironment

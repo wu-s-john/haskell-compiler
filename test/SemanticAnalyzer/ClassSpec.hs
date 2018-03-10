@@ -20,12 +20,10 @@ import SemanticAnalyzer.Class
         mergeMethods)
 import Test.Hspec
        (Expectation, Spec, describe, hspec, it, shouldBe)
+import Util
 
 main :: IO ()
 main = hspec spec
-
-(=:) :: a -> b -> (a, b)
-a =: b = (a, b)
 
 fooFeatures :: T.Identifier -> ClassRecord -> ClassRecord
 fooFeatures name parent' = ClassRecord name parent' fooMethods ["x" =: AttributeRecord "x" "X"]
