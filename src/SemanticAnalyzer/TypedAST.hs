@@ -13,6 +13,7 @@ import Control.Monad.Reader (Reader, ask)
 import Control.Monad.State (State, get)
 import Control.Monad.Writer (WriterT, tell)
 import qualified Data.Map as M
+import qualified Data.Set as S
 import Parser.AST as AST
 import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Class
@@ -76,23 +77,43 @@ semanticCheck (AST.IdentifierExpr identifierName) = do
 class (Monad m) =>
       Categorical a m where
   (<==) :: a -> a -> m Bool -- determines if the left left argument is a subset of the right
+  (\/) :: a -> a -> m a
 
+-- todo deal with primitive types
 instance Categorical ClassRecord Identity where
   (ClassRecord possibleSubtype possibleParentRecord _ _) <== parentRecord@(ClassRecord parentType _ _ _)
     | possibleSubtype == parentType = return True
     | otherwise = possibleParentRecord <== parentRecord
   ObjectClass <== ClassRecord {} = return False
   _ <== ObjectClass = return True
+  leftClassRecord \/ rightClassRecord = do
+    let rightClassAncestors = computeAncestors rightClassRecord
+    return $ lub leftClassRecord rightClassAncestors
+    where computeAncestors ObjectClass = S.fromList ["Object"] -- invariant all classes should hold "Object" except for String and Int
+          computeAncestors (ClassRecord className' parent' _ _) = className' `S.insert` computeAncestors parent'
+          lub classRecord@(ClassRecord className' parent' _ _) ancestors
+            | className' `elem` ancestors = classRecord
+            | otherwise = lub parent' ancestors
+          lub ObjectClass _ = ObjectClass
 
 instance Categorical T.Type (Reader ClassEnvironment) where
   possibleSubType <== parentType = do
     parentClassRecord <- getClassRecord parentType
     subclassRecord <- getClassRecord possibleSubType
     return (runIdentity $ subclassRecord <== parentClassRecord)
+  leftType \/ rightType = do
+    leftClassRecord <- getClassRecord leftType
+    rightClassRecord <- getClassRecord rightType
+    case runIdentity $ leftClassRecord \/ rightClassRecord of
+      (ClassRecord className' _ _ _) -> return className'
+      ObjectClass -> return "Object"
+
 
 getClassRecord :: T.Type -> Reader ClassEnvironment ClassRecord
-getClassRecord type' = do
+getClassRecord typeName' = do
   classEnvironment <- ask
-  if | type' == "Object" -> return ObjectClass
-     | otherwise -> return $ classEnvironment M.! type'
+  if | typeName' == "Object" -> return ObjectClass
+     | otherwise -> case typeName' `M.lookup` classEnvironment of
+                        Just classRecord -> return classRecord
+                        Nothing -> return (ClassRecord typeName' ObjectClass M.empty M.empty)
      -- | parentType `elem` primitiveTypes -> (ClassRecord parentType [] []) todo would include primitivetypes later

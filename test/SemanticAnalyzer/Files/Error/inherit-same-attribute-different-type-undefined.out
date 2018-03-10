@@ -1,0 +1,9 @@
+inheritSameAttributeDifferentTypeUndefined.cl:1: Attribute x is an attribute of an inherited class.
+inheritSameAttributeDifferentTypeUndefined.cl:1: Attribute x is an attribute of an inherited class.
+inheritSameAttributeDifferentTypeUndefined.cl:1: Class X of attribute x is undefined.
+inheritSameAttributeDifferentTypeUndefined.cl:1: non-Int arguments: String + Int
+inheritSameAttributeDifferentTypeUndefined.cl:1: Inferred return type String of method main does not conform to declared return type Int.
+inheritSameAttributeDifferentTypeUndefined.cl:1: Class X of attribute x is undefined.
+inheritSameAttributeDifferentTypeUndefined.cl:1: Argument of 'not' has type Int instead of Bool.
+inheritSameAttributeDifferentTypeUndefined.cl:1: Inferred return type Bool of method bar does not conform to declared return type Int.
+Compilation halted due to static semantic errors.

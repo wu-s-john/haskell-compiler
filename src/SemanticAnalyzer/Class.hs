@@ -66,7 +66,6 @@ extractAttributeRecord feature =
 
 type ClassEnvironment = M.Map String ClassRecord
 
---todo put this into a reader monad
 --todo this will probably be part of a class
 createEnvironment :: CC.ClassInheritanceGraph -> AST.Program -> ClassEnvironment
 createEnvironment inheritanceGraph (AST.Program classes) = cache

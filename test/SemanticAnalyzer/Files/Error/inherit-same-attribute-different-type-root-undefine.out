@@ -1,0 +1,3 @@
+﻿hi.cl:1: Attribute x is an attribute of an inherited class.
+hi.cl:1: Class Undefined of attribute x is undefined.
+hi.cl:1: Class Baz of attribute x is undefined.
