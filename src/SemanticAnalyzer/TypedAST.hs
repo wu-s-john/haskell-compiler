@@ -25,6 +25,8 @@ data SemanticError
   | UndeclaredIdentifier T.Identifier
   | MismatchDeclarationType { inferredType :: T.Type
                             , declaredType :: T.Type }
+  | UndefinedMethod {methodName :: T.Type}
+  | DispatchUndefinedClass {className :: T.Type}
   deriving (Show, Eq)
 
 data ExpressionT
@@ -35,6 +37,8 @@ data ExpressionT
   | IdentifierExprT { name :: T.Identifier
                     , typeName :: T.Type }
   | LetExprT LetBindingT
+  | MethodDispatchT { expr :: ExpressionT, methodName :: T.Identifier, parameters :: [ExpressionT], typeName :: T.Type}
+  | SelfVarExprT
   deriving (Show, Eq)
 
 data LetBindingT
@@ -53,8 +57,10 @@ computeType (IntegerExprT _) = "Int"
 computeType (PlusExprT _ _) = "Int"
 computeType (StringExprT _) = "String"
 computeType (IdentifierExprT _ typeName') = typeName'
+computeType SelfVarExprT = "self"
 
 type ObjectEnvironment = M.Map T.Identifier T.Type
+--type Semantic
 
 type SemanticAnalyzer = ReaderT ClassEnvironment (WriterT [SemanticError] (State ObjectEnvironment))
 
@@ -69,6 +75,7 @@ type SemanticAnalyzer = ReaderT ClassEnvironment (WriterT [SemanticError] (State
 semanticCheck :: AST.Expression -> SemanticAnalyzer ExpressionT
 semanticCheck (AST.IntegerExpr value) = return (IntegerExprT value)
 semanticCheck (AST.StringExpr value) = return (StringExprT value)
+
 semanticCheck (AST.PlusExpr left' right') = do
   annotatedLeft <- semanticCheck left'
   annotatedRight <- semanticCheck right'
@@ -100,6 +107,17 @@ semanticCheck (AST.LetExpr (LetBinding identifier typeName' maybeInitialExpressi
           (tell [MismatchDeclarationType initialExpressionTypeName typeName'])
         transformResult (Just initialExpressionT)
       Nothing -> transformResult Nothing
+
+semanticCheck AST.SelfVarExpr = return SelfVarExprT
+
+semanticCheck (AST.MethodDispatch expression methodName' _) = do
+  initialExpressionT <- semanticCheck expression
+  classEnvironment <- ask
+  let callerExprClassName = computeType initialExpressionT
+  case M.lookup "Foo" classEnvironment of
+    Just _ -> tell [UndefinedMethod methodName']
+    Nothing -> tell [DispatchUndefinedClass callerExprClassName]
+  return (MethodDispatchT initialExpressionT methodName' [] "Object")
 
 class (Monad m) =>
       Categorical a m where

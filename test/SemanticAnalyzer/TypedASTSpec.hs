@@ -31,7 +31,8 @@ fooClassRecord = ClassRecord "Foo" ObjectClass [] []
 
 classEnvironment :: ClassEnvironment
 classEnvironment =
-  initialClassEnvironment `M.union` ["Foo" =: fooClassRecord, "Bar" =: ClassRecord "Bar" fooClassRecord [] []]
+  initialClassEnvironment `M.union` ["Foo" =: fooClassRecord,
+  "Bar" =: ClassRecord "Bar" fooClassRecord [] []]
 
 classEnvironmentWithInheritedBasicClass :: ClassEnvironment
 classEnvironmentWithInheritedBasicClass = classEnvironment `M.union` ["Baz" =: ClassRecord "Baz" intRecord [] []]
@@ -94,8 +95,22 @@ spec =
                   (Just $ StringExprT "Hello World")
                   (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5))
               , [MismatchDeclarationType "String" "Int"])
+    describe "method dispatch" $ do
+      it "should throw an error if a method could not be found for a class" $
+        testAnalyzer
+          classEnvironment
+          []
+          "foo()"
+          (MethodDispatchT SelfVarExprT "foo" [] "Object", [UndefinedMethod "foo"])
+      it "should throw an error if the caller expression returns an undefined class" $
+        testAnalyzer
+          []
+          ["baz" =: "Baz"]
+          "baz.foo()"
+          (MethodDispatchT (IdentifierExprT "baz" "Baz") "foo" [] "Object", [DispatchUndefinedClass "Baz"])
+
     describe "/>" $
-      it "should set a new variable and is applied only to an inner scope" $
+      it "should set a new variable and is a pplied only to an inner scope" $
       fst $
       applyParameters [] [] $ do
         _ <- ("x", "Int") /> (get >>= (\objectEnvironment -> return $ "x" `M.member` objectEnvironment `shouldBe` True))
@@ -130,13 +145,13 @@ spec =
       it "should have the lub of a basic class and an object that inherits from a basic class be the basic class" $
         testUpperBound classEnvironmentWithInheritedBasicClass "Baz" "Int" "Int"
   where
-    testAnalyzer classEnvironment objectEnvironment sourceCode result =
-      applyParameters classEnvironment objectEnvironment (semanticCheck (parseExpression sourceCode)) `shouldBe` result
+    testAnalyzer classEnvironment' objectEnvironment sourceCode result =
+      applyParameters classEnvironment' objectEnvironment (semanticCheck (parseExpression sourceCode)) `shouldBe` result
     testSubtype classEnvironment' possibleSubType parentType result =
       runReader ((possibleSubType <== parentType) :: Reader ClassEnvironment Bool) classEnvironment' `shouldBe` result
     testUpperBound classEnvironment' possibleSubType parentType result =
       runReader ((possibleSubType \/ parentType) :: Reader ClassEnvironment T.Type) classEnvironment' `shouldBe` result
 
 applyParameters :: ClassEnvironment -> ObjectEnvironment -> SemanticAnalyzer a -> (a, [SemanticError])
-applyParameters classEnvironment objectEnvironment semanticAnalyzer =
-  evalState (runWriterT (runReaderT semanticAnalyzer classEnvironment)) objectEnvironment
+applyParameters classEnvironment' objectEnvironment semanticAnalyzer =
+  evalState (runWriterT (runReaderT semanticAnalyzer classEnvironment')) objectEnvironment
