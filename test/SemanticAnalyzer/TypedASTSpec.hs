@@ -14,7 +14,8 @@ import Data.Map as M
 import Parser.AST as AST
 import Parser.ParserUtil (parseExpression)
 import Parser.TerminalNode as T
-import SemanticAnalyzer.Class (ClassEnvironment, ClassRecord(..))
+import SemanticAnalyzer.Class
+       (ClassEnvironment, ClassRecord(..), MethodRecord(..))
 import SemanticAnalyzer.InitialClassEnvironment
 import SemanticAnalyzer.TypedAST
        (ExpressionT(..), LetBindingT(..), ObjectEnvironment,
@@ -27,12 +28,16 @@ main :: IO ()
 main = hspec spec
 
 fooClassRecord :: ClassRecord
-fooClassRecord = ClassRecord "Foo" ObjectClass [] []
+fooClassRecord =
+  ClassRecord
+    "Foo"
+    ObjectClass
+    ["call8" =: MethodRecord "call8" [] "Int", "sum" =: MethodRecord "sum" [Formal "a" "Int", Formal "b" "Int"] "Int"]
+    []
 
 classEnvironment :: ClassEnvironment
 classEnvironment =
-  initialClassEnvironment `M.union` ["Foo" =: fooClassRecord,
-  "Bar" =: ClassRecord "Bar" fooClassRecord [] []]
+  initialClassEnvironment `M.union` ["Foo" =: fooClassRecord, "Bar" =: ClassRecord "Bar" fooClassRecord [] []]
 
 classEnvironmentWithInheritedBasicClass :: ClassEnvironment
 classEnvironmentWithInheritedBasicClass = classEnvironment `M.union` ["Baz" =: ClassRecord "Baz" intRecord [] []]
@@ -84,17 +89,17 @@ spec =
               (LetExprT $ LetBindingT "x" "Int" (Just $ IntegerExprT 4) (IdentifierExprT "x" "Int"), [])
         describe "expression is not a subtype of it's declared variable" $
           it "declared variable is still follows it's typing" $
-            testAnalyzer
-              classEnvironment
-              []
-              "let x : Int <- \"Hello World\" in x + 5"
-              ( LetExprT $
-                LetBindingT
-                  "x"
-                  "Int"
-                  (Just $ StringExprT "Hello World")
-                  (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5))
-              , [MismatchDeclarationType "String" "Int"])
+          testAnalyzer
+            classEnvironment
+            []
+            "let x : Int <- \"Hello World\" in x + 5"
+            ( LetExprT $
+              LetBindingT
+                "x"
+                "Int"
+                (Just $ StringExprT "Hello World")
+                (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5))
+            , [MismatchDeclarationType "String" "Int"])
     describe "method dispatch" $ do
       it "should throw an error if a method could not be found for a class" $
         testAnalyzer
@@ -108,7 +113,21 @@ spec =
           ["baz" =: "Baz"]
           "baz.foo()"
           (MethodDispatchT (IdentifierExprT "baz" "Baz") "foo" [] "Object", [DispatchUndefinedClass "Baz"])
-
+      it "should parse if it can call a valid method in a valid class with no parameters" $
+        testAnalyzer classEnvironment [] "call8()" (MethodDispatchT SelfVarExprT "call8" [] "Int", [])
+      it "should throw an error if the number of parameters do not match" $
+        testAnalyzer
+          classEnvironment
+          []
+          "call8(8)"
+          (MethodDispatchT SelfVarExprT "call8" [IntegerExprT 8] "Int", [WrongNumberParameters "call8"])
+      it "should throw an error if the a parameter is not a subtype of it's argument" $
+        testAnalyzer
+          classEnvironment
+          []
+          "sum(\"string\", 2)"
+          ( MethodDispatchT SelfVarExprT "sum" [StringExprT "string", IntegerExprT 2] "Int"
+          , [WrongParameterType "sum" "a" "Int" "String"])
     describe "/>" $
       it "should set a new variable and is a pplied only to an inner scope" $
       fst $

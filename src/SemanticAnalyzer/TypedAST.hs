@@ -17,7 +17,8 @@ import qualified Data.Set as S
 import Parser.AST as AST
 import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Class
-       (ClassEnvironment(..), ClassRecord(..))
+       (ClassEnvironment(..), ClassRecord(..), MethodMap,
+        MethodRecord(..))
 
 data SemanticError
   = NonIntArgumentsPlus { left :: T.Type
@@ -25,8 +26,13 @@ data SemanticError
   | UndeclaredIdentifier T.Identifier
   | MismatchDeclarationType { inferredType :: T.Type
                             , declaredType :: T.Type }
-  | UndefinedMethod {methodName :: T.Type}
-  | DispatchUndefinedClass {className :: T.Type}
+  | UndefinedMethod { methodName :: T.Identifier }
+  | DispatchUndefinedClass { className :: T.Type }
+  | WrongNumberParameters { methodName :: T.Identifier }
+  | WrongParameterType { methodName :: T.Identifier
+                       , parameterName :: T.Identifier
+                       , formalType :: T.Type
+                       , expressionType :: T.Type}
   deriving (Show, Eq)
 
 data ExpressionT
@@ -37,7 +43,10 @@ data ExpressionT
   | IdentifierExprT { name :: T.Identifier
                     , typeName :: T.Type }
   | LetExprT LetBindingT
-  | MethodDispatchT { expr :: ExpressionT, methodName :: T.Identifier, parameters :: [ExpressionT], typeName :: T.Type}
+  | MethodDispatchT { expr :: ExpressionT
+                    , methodName :: T.Identifier
+                    , parameters :: [ExpressionT]
+                    , typeName :: T.Type }
   | SelfVarExprT
   deriving (Show, Eq)
 
@@ -60,8 +69,8 @@ computeType (IdentifierExprT _ typeName') = typeName'
 computeType SelfVarExprT = "self"
 
 type ObjectEnvironment = M.Map T.Identifier T.Type
---type Semantic
 
+--type Semantic
 type SemanticAnalyzer = ReaderT ClassEnvironment (WriterT [SemanticError] (State ObjectEnvironment))
 
 (/>) :: (T.Identifier, T.Type) -> SemanticAnalyzer a -> SemanticAnalyzer a -- temporarily adds a type to the object environment
@@ -75,7 +84,6 @@ type SemanticAnalyzer = ReaderT ClassEnvironment (WriterT [SemanticError] (State
 semanticCheck :: AST.Expression -> SemanticAnalyzer ExpressionT
 semanticCheck (AST.IntegerExpr value) = return (IntegerExprT value)
 semanticCheck (AST.StringExpr value) = return (StringExprT value)
-
 semanticCheck (AST.PlusExpr left' right') = do
   annotatedLeft <- semanticCheck left'
   annotatedRight <- semanticCheck right'
@@ -85,13 +93,11 @@ semanticCheck (AST.PlusExpr left' right') = do
     (computeType annotatedLeft == "Int" && computeType annotatedRight == "Int")
     (tell [NonIntArgumentsPlus leftType rightType])
   return $ PlusExprT annotatedLeft annotatedRight
-
 semanticCheck (AST.IdentifierExpr identifierName) = do
   objectIdentifier <- get
   case identifierName `M.lookup` objectIdentifier of
     Nothing -> tell [UndeclaredIdentifier identifierName] >> return (IdentifierExprT identifierName "Object")
     Just typeName' -> return (IdentifierExprT identifierName typeName')
-
 semanticCheck (AST.LetExpr (LetBinding identifier typeName' maybeInitialExpression evaluatingExpression)) = do
   classEnvironment <- ask --todo look for a way to refactor this more cleanly
   (identifier, typeName') /> do
@@ -107,17 +113,38 @@ semanticCheck (AST.LetExpr (LetBinding identifier typeName' maybeInitialExpressi
           (tell [MismatchDeclarationType initialExpressionTypeName typeName'])
         transformResult (Just initialExpressionT)
       Nothing -> transformResult Nothing
-
 semanticCheck AST.SelfVarExpr = return SelfVarExprT
-
-semanticCheck (AST.MethodDispatch expression methodName' _) = do
-  initialExpressionT <- semanticCheck expression
+semanticCheck (AST.MethodDispatch callerExpression calleeName parameters') = do
+  callerExpressionT <- semanticCheck callerExpression
   classEnvironment <- ask
-  let callerExprClassName = computeType initialExpressionT
+  let callerExprClassName = computeType callerExpressionT
   case M.lookup "Foo" classEnvironment of
-    Just _ -> tell [UndefinedMethod methodName']
-    Nothing -> tell [DispatchUndefinedClass callerExprClassName]
-  return (MethodDispatchT initialExpressionT methodName' [] "Object")
+    Just (ClassRecord _ _ classMethods _) -> checkCallee calleeName callerExpressionT classMethods parameters'
+    Nothing -> tell [DispatchUndefinedClass callerExprClassName] >> errorMethodReturn callerExpressionT calleeName
+
+errorMethodReturn initialExpressionT calleeName = return (MethodDispatchT initialExpressionT calleeName [] "Object")
+
+checkCallee :: T.Identifier -> ExpressionT -> MethodMap -> [Expression] -> SemanticAnalyzer ExpressionT
+checkCallee calleeName callerExpression classMethods parameters' =
+  case M.lookup calleeName classMethods of
+    Nothing -> tell [UndefinedMethod calleeName] >> errorMethodReturn callerExpression calleeName
+    Just (MethodRecord _ arguments returnTypeName) -> do
+      parametersT <- checkParameters calleeName arguments parameters'
+      return (MethodDispatchT callerExpression calleeName parametersT returnTypeName)
+
+checkParameters :: String -> [AST.Formal] -> [Expression] -> SemanticAnalyzer [ExpressionT]
+checkParameters methodName' formals expressions =
+  if length formals /= length expressions
+    then tell [WrongNumberParameters methodName'] >> mapM semanticCheck expressions
+    else zipWithM checkParameter formals expressions
+  where
+    checkParameter (AST.Formal formalArgumentName formalTypeName) actualParameterExpr = do
+      actualParameterExprT <- semanticCheck actualParameterExpr
+      let actualParameterTypeName = computeType actualParameterExprT
+      classEnvironment <- ask
+      unless (runReader (actualParameterTypeName <== formalTypeName) classEnvironment) $
+        tell [WrongParameterType methodName' formalArgumentName formalTypeName actualParameterTypeName]
+      return actualParameterExprT
 
 class (Monad m) =>
       Categorical a m where
