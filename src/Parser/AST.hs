@@ -1,11 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module Parser.AST where
 
-import Data.Aeson (FromJSON)
-import GHC.Generics (Generic)
 import Parser.TerminalNode
 
 newtype Program = Program
@@ -31,9 +28,7 @@ data Feature
 data Formal = Formal
   { getIdentifier :: Identifier
   , getType :: Type
-  } deriving (Show, Read, Eq, Generic)
-
-instance FromJSON Formal
+  } deriving (Show, Read, Eq)
 
 data Expression
   = AssignmentExpr { getIdentifier :: Identifier

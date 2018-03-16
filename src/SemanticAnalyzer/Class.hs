@@ -1,16 +1,14 @@
 {-# OPTIONS_GHC -Wall -Wcompat #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module SemanticAnalyzer.Class where
 
-import Data.Aeson
 import qualified Data.Map as M
-import Data.Maybe (mapMaybe)
-import GHC.Generics
 
+import Data.Maybe (mapMaybe)
 import Control.Monad (join)
 import Control.Monad.Writer (Writer, tell)
+
 import qualified Parser.AST as AST
 import qualified Parser.TerminalNode as T
 import qualified SemanticAnalyzer.ClassChecker as CC
@@ -26,16 +24,12 @@ data MethodRecord = MethodRecord
   { methodName :: T.Identifier
   , parameters :: [AST.Formal]
   , returnType :: T.Type
-  } deriving (Show, Eq, Generic)
-
-instance FromJSON MethodRecord
+  } deriving (Show, Eq)
 
 data AttributeRecord = AttributeRecord
   { attributeName :: T.Identifier
   , typeName :: T.Type
-  } deriving (Show, Eq, Generic)
-
-instance FromJSON AttributeRecord
+  } deriving (Show, Eq)
 
 type MethodMap = M.Map T.Identifier MethodRecord
 
@@ -44,13 +38,14 @@ type AttributeMap = M.Map T.Identifier AttributeRecord
 data ClassRecord
   = ClassRecord { className :: T.Type
                 , parent :: ClassRecord
-                , methods :: MethodMap -- deal with Attributes
-                , attributes :: AttributeMap -- deal with Attributes
+                , methods :: MethodMap -- contains methods of a class
+                , attributes :: AttributeMap -- contains attributes of a class
                  }
   | ObjectClass
-  | BasicClass { className :: T.Type, methods :: MethodMap } --todo include default values for code translation
+  | BasicClass { className :: T.Type, methods :: MethodMap }
+  --todo include default values for code translation
   -- todo include IO which only has a class name and methods
-  deriving (Show, Eq, Generic)
+  deriving (Show, Eq)
 
 extractMethodRecord :: AST.Feature -> Maybe MethodRecord
 extractMethodRecord feature =
