@@ -3,7 +3,6 @@
 
 module SemanticAnalyzer.InitialClassEnvironment where
 
-import Parser.AST (Formal(..))
 import SemanticAnalyzer.Class
 import Util
 
@@ -14,8 +13,8 @@ initialClassEnvironment =
     BasicClass
       "String"
       [ "length" =: MethodRecord "length" [] "Int"
-      , "concat" =: MethodRecord "concat" [Formal "s" "String"] "String"
-      , "substr" =: MethodRecord "substr" [Formal "i" "Int", Formal "l" "Int"] "String"
+      , "concat" =: MethodRecord "concat" [("s", "String")] "String"
+      , "substr" =: MethodRecord "substr" [("i", "Int"), ("l", "Int")] "String"
       ]
   , "Bool" =: BasicClass "Bool" []
   , "Int" =: intRecord

@@ -29,7 +29,7 @@ fooFeatures :: T.Identifier -> ClassRecord -> ClassRecord
 fooFeatures name parent' = ClassRecord name parent' fooMethods ["x" =: AttributeRecord "x" "X"]
 
 fooMethods :: MethodMap
-fooMethods = ["twice" =: MethodRecord "twice" [AST.Formal "num" "Int"] "Int"]
+fooMethods = ["twice" =: MethodRecord "twice" [("num", "Int")] "Int"]
 
 fooClassRecord :: ClassRecord
 fooClassRecord = fooFeatures "Foo" ObjectClass
@@ -43,7 +43,7 @@ spec =
         "foo () : Bar {true}" `testMethodRecord` (Just $ MethodRecord "foo" [] "Bar")
       it "should parse a method with parameters" $
         "foo (x : X, y: Y) : Foo {true}" `testMethodRecord`
-        (Just $ MethodRecord "foo" [AST.Formal "x" "X", AST.Formal "y" "Y"] "Foo")
+        (Just $ MethodRecord "foo" [("x", "X"), ("y", "Y")] "Foo")
     describe "attribute" $ do
       it "should not parse a method" $ "foo() : Bar {true}" `testAttributeRecord` Nothing
       it "should parse an attribute" $ "foo : Bar" `testAttributeRecord` (Just $ AttributeRecord "foo" "Bar")
@@ -82,14 +82,14 @@ spec =
     describe "mergeMethods" $ do
       it "should not report errors for methods if a class does not inherit methods that it's parent has" $
         testMethod
-          ["foo" =: MethodRecord "foo" [AST.Formal "x" "X", AST.Formal "y" "Y"] "Z"]
+          ["foo" =: MethodRecord "foo" [("x", "X"),  ("y", "Y")] "Z"]
           []
-          (["foo" =: MethodRecord "foo" [AST.Formal "x" "X", AST.Formal "y" "Y"] "Z"], [])
+          (["foo" =: MethodRecord "foo" [ ("x", "X"),  ("y", "Y")] "Z"], [])
       it "should report errrors for methods if a class does inherit a method with no matching return types" $ -- todo test for inheritance
         testMethod
-          ["foo" =: MethodRecord "foo" [AST.Formal "x" "X"] "Z"]
-          ["foo" =: MethodRecord "foo" [AST.Formal "x" "X"] "Bar"]
-          (["foo" =: MethodRecord "foo" [AST.Formal "x" "X"] "Z"], [DifferentMethodReturnType "Z" "Bar"])
+          ["foo" =: MethodRecord "foo" [ ("x", "X")] "Z"]
+          ["foo" =: MethodRecord "foo" [ ("x", "X")] "Bar"]
+          (["foo" =: MethodRecord "foo" [ ("x", "X")] "Z"], [DifferentMethodReturnType "Z" "Bar"])
   where
     testAttribute className' classAttr parentAttr expectedResult =
       runWriter (mergeAttributes className' classAttr parentAttr) `shouldBe` expectedResult

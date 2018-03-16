@@ -17,7 +17,7 @@ import qualified Data.Set as S
 import Parser.AST as AST
 import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Class
-       (ClassEnvironment(..), ClassRecord(..), MethodMap,
+       (ClassEnvironment, ClassRecord(..), MethodMap,
         MethodRecord(..))
 
 data SemanticError
@@ -70,7 +70,6 @@ computeType SelfVarExprT = "self"
 
 type ObjectEnvironment = M.Map T.Identifier T.Type
 
---type Semantic
 type SemanticAnalyzer = ReaderT ClassEnvironment (WriterT [SemanticError] (State ObjectEnvironment))
 
 (/>) :: (T.Identifier, T.Type) -> SemanticAnalyzer a -> SemanticAnalyzer a -- temporarily adds a type to the object environment
@@ -122,6 +121,7 @@ semanticCheck (AST.MethodDispatch callerExpression calleeName parameters') = do
     Just (ClassRecord _ _ classMethods _) -> checkCallee calleeName callerExpressionT classMethods parameters'
     Nothing -> tell [DispatchUndefinedClass callerExprClassName] >> errorMethodReturn callerExpressionT calleeName
 
+errorMethodReturn :: ExpressionT -> T.Identifier -> SemanticAnalyzer ExpressionT
 errorMethodReturn initialExpressionT calleeName = return (MethodDispatchT initialExpressionT calleeName [] "Object")
 
 checkCallee :: T.Identifier -> ExpressionT -> MethodMap -> [Expression] -> SemanticAnalyzer ExpressionT
@@ -132,13 +132,13 @@ checkCallee calleeName callerExpression classMethods parameters' =
       parametersT <- checkParameters calleeName arguments parameters'
       return (MethodDispatchT callerExpression calleeName parametersT returnTypeName)
 
-checkParameters :: String -> [AST.Formal] -> [Expression] -> SemanticAnalyzer [ExpressionT]
+checkParameters :: String -> [(T.Identifier, T.Type)] -> [Expression] -> SemanticAnalyzer [ExpressionT]
 checkParameters methodName' formals expressions =
   if length formals /= length expressions
     then tell [WrongNumberParameters methodName'] >> mapM semanticCheck expressions
-    else zipWithM checkParameter formals expressions
+    else zipWithM (uncurry checkParameter) formals expressions
   where
-    checkParameter (AST.Formal formalArgumentName formalTypeName) actualParameterExpr = do
+    checkParameter formalArgumentName formalTypeName actualParameterExpr = do
       actualParameterExprT <- semanticCheck actualParameterExpr
       let actualParameterTypeName = computeType actualParameterExprT
       classEnvironment <- ask

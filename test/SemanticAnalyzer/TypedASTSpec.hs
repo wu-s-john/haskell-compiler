@@ -11,7 +11,6 @@ import Control.Monad.Reader (Reader, runReader, runReaderT)
 import Control.Monad.State (evalState, get)
 import Control.Monad.Writer (runWriterT)
 import Data.Map as M
-import Parser.AST as AST
 import Parser.ParserUtil (parseExpression)
 import Parser.TerminalNode as T
 import SemanticAnalyzer.Class
@@ -32,7 +31,7 @@ fooClassRecord =
   ClassRecord
     "Foo"
     ObjectClass
-    ["call8" =: MethodRecord "call8" [] "Int", "sum" =: MethodRecord "sum" [Formal "a" "Int", Formal "b" "Int"] "Int"]
+    ["call8" =: MethodRecord "call8" [] "Int", "sum" =: MethodRecord "sum" [("a", "Int"), ("b", "Int")] "Int"]
     []
 
 classEnvironment :: ClassEnvironment

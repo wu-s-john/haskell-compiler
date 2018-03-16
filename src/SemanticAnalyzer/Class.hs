@@ -5,9 +5,9 @@ module SemanticAnalyzer.Class where
 
 import qualified Data.Map as M
 
-import Data.Maybe (mapMaybe)
 import Control.Monad (join)
 import Control.Monad.Writer (Writer, tell)
+import Data.Maybe (mapMaybe)
 
 import qualified Parser.AST as AST
 import qualified Parser.TerminalNode as T
@@ -22,7 +22,7 @@ data InheritanceErrors
 
 data MethodRecord = MethodRecord
   { methodName :: T.Identifier
-  , parameters :: [AST.Formal]
+  , parameters :: [(T.Identifier, T.Type)]
   , returnType :: T.Type
   } deriving (Show, Eq)
 
@@ -42,7 +42,8 @@ data ClassRecord
                 , attributes :: AttributeMap -- contains attributes of a class
                  }
   | ObjectClass
-  | BasicClass { className :: T.Type, methods :: MethodMap }
+  | BasicClass { className :: T.Type
+               , methods :: MethodMap }
   --todo include default values for code translation
   -- todo include IO which only has a class name and methods
   deriving (Show, Eq)
@@ -51,7 +52,10 @@ extractMethodRecord :: AST.Feature -> Maybe MethodRecord
 extractMethodRecord feature =
   case feature of
     AST.Attribute {} -> Nothing
-    AST.Method name parameters' typeName' _ -> Just $ MethodRecord name parameters' typeName'
+    AST.Method name formalParameters' typeName' _ ->
+      Just $ MethodRecord name (map convertFormalToTuple formalParameters') typeName'
+  where
+    convertFormalToTuple (AST.Formal identifierName typeName') = (identifierName, typeName')
 
 extractAttributeRecord :: AST.Feature -> Maybe AttributeRecord
 extractAttributeRecord feature =
