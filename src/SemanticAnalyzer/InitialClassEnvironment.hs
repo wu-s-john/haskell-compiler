@@ -11,16 +11,18 @@ initialClassEnvironment :: ClassEnvironment
 initialClassEnvironment =
   [ "Object" =: ObjectClass
   , "String" =:
-    BasicClass
+    ClassRecord
       "String"
+      ObjectClass
       [ "length" =: MethodRecord "length" [] "Int"
       , "concat" =: MethodRecord "concat" [("s", "String")] "String"
       , "substr" =: MethodRecord "substr" [("i", "Int"), ("l", "Int")] "String"
       ]
-  , "Bool" =: BasicClass "Bool" []
-  , "Int" =: intRecord
-  , "IO" =: BasicClass "IO" []
+      []
+  , "Bool" =: ClassRecord "Bool" ObjectClass [] []
+  , "Int" =: ClassRecord "Int" ObjectClass [] []
+  , "IO" =: ClassRecord "IO" ObjectClass [] []
   ]
 
-intRecord :: ClassRecord
-intRecord = BasicClass "Int" []
+ioRecord :: ClassRecord
+ioRecord = ClassRecord "IO" ObjectClass [] []

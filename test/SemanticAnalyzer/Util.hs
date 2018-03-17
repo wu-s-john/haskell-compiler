@@ -25,10 +25,8 @@ fooClassRecord =
 
 classEnvironmentMock :: ClassEnvironment
 classEnvironmentMock =
-  initialClassEnvironment `M.union` ["Foo" =: fooClassRecord, "Bar" =: ClassRecord "Bar" fooClassRecord [] []]
-
-classEnvironmentWithInheritedBasicClass :: ClassEnvironment
-classEnvironmentWithInheritedBasicClass = classEnvironmentMock `M.union` ["Baz" =: ClassRecord "Baz" intRecord [] []]
+  initialClassEnvironment `M.union`
+  ["Foo" =: fooClassRecord, "Bar" =: ClassRecord "Bar" fooClassRecord [] [], "Quux" =: ClassRecord "Quux" ObjectClass [] []]
 
 applyParameters :: T.Type -> ClassEnvironment -> ObjectEnvironment -> SemanticAnalyzer a -> (a, [SemanticError])
 applyParameters currentClassName classEnvironment objectEnvironment semanticAnalyzer =

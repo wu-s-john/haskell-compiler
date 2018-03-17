@@ -9,9 +9,11 @@ module SemanticAnalyzer.SemanticCheckUtilSpec
 
 import qualified Data.Map as M
 
-import Test.Hspec (Spec, describe, hspec, it,shouldBe)
 import Control.Monad.State (get)
+import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 
+import SemanticAnalyzer.Class (ClassRecord(..))
+import SemanticAnalyzer.InitialClassEnvironment
 import SemanticAnalyzer.SemanticCheckUtil ((/>), (<==), (\/))
 import SemanticAnalyzer.Util
 
@@ -22,41 +24,45 @@ spec :: Spec
 spec =
   describe "SemanticCheckUtil" $ do
     describe "/>" $
-          it "should set a new variable and is a pplied only to an inner scope" $
-          fst $
-          applyParameters "" [] [] $ do
-            _ <- ("x", "Int") /> (get >>= (\objectEnvironment -> return $ "x" `M.member` objectEnvironment `shouldBe` True))
-            objectEnvironment <- get
-            return $ "x" `M.member` objectEnvironment `shouldBe` False
-    describe "isSubtype" $ -- todo separate the cases for (String and Int) with IO
+      it "should set a new variable and is a pplied only to an inner scope" $
+      fst $
+      applyParameters "" [] [] $ do
+        _ <- ("x", "Int") /> (get >>= (\objectEnvironment -> return $ "x" `M.member` objectEnvironment `shouldBe` True))
+        objectEnvironment <- get
+        return $ "x" `M.member` objectEnvironment `shouldBe` False
+    describe "isSubtype" $
      do
-      it "a basic class should be a subtype of object" $ testSubtype' classEnvironmentMock "String" "Object" True
-      it "a basic class should not be a subtype of any constructed type" $
+      it "any class should be a subtype of object" $ testSubtype' classEnvironmentMock "String" "Object" True
+      it "should not have a primitive type be a subtype of any class (except for Object)" $
         testSubtype' classEnvironmentMock "String" "Foo" False
-      it "a basic class should be a subtype of a basic class if they are the same" $
+      it "should have a primitive type be a subtype of itself" $
         testSubtype' classEnvironmentMock "String" "String" True
-      it "a basic class should not be a subtype of a basic class if they are not the same" $
-        testSubtype' classEnvironmentMock "String" "Int" False
-      it "a class record should be a subtype of a basic class only if it inherits the class" $
-        testSubtype' classEnvironmentWithInheritedBasicClass "Baz" "Int" True
-      it "a class record should not be a subtype of a basic class if it does not inherit the class" $
-        testSubtype' classEnvironmentMock "Baz" "Int" False
-      it "should return true if two types are subtypes of each other" $
-        testSubtype' classEnvironmentMock "Bar" "Foo" True
-      it "should return false if two types are not subtypes of each other" $
+      it "should not have a class be a subtype of another class it does not inherit the class" $
+        testSubtype' classEnvironmentMock "Baz" "Quux" False
+      it "should have a child class be a subtype of parent class" $ testSubtype' classEnvironmentMock "Bar" "Foo" True
+      it "should not have a parent class be a subtype of it's child class" $
         testSubtype' classEnvironmentMock "Foo" "Bar" False
-      it "should return false if the possible subtype is undefined" $ testSubtype' classEnvironmentMock "X" "Foo" False
-      it "should return false if the parent is undefined" $ testSubtype' classEnvironmentMock "Foo" "X" False
-      it "should return true if the parent subtype is Object" $ testSubtype' classEnvironmentMock "Foo" "Object" True
+      it "should not have a class be a subtype of an undefined class" $
+        testSubtype' classEnvironmentMock "X" "Foo" False
+      it "should not have an undefined class be a subtype of a defined class" $
+        testSubtype' classEnvironmentMock "Foo" "X" False
+      it "should have any defined class be a subclass of an object" $
+        testSubtype' classEnvironmentMock "Foo" "Object" True
+      it "should allow a class be a subtype of IO" $
+        testSubtype' (M.insert "ChildIO" (ClassRecord "ChildIO" ioRecord [] []) classEnvironmentMock) "ChildIO" "IO" True
+      describe "IO" $ do
+        it "should have IO be a subtype of itself" $ testSubtype' classEnvironmentMock "IO" "Object" True
+        it "should have IO be a subtype of Object" $ testSubtype' classEnvironmentMock "IO" "IO" True
+        it "should not have IO be a subtype of a basic object" $ testSubtype' classEnvironmentMock "IO" "Foo" False
     describe "lub (lowest upper bound)" $ do
-      it "should return object if two types do not share the same ancestors" $
+      it "should compute the lub of two types do not share the same ancestors be object" $
         testUpperBound' classEnvironmentMock "Foo" "X" "Object"
-      it "should compute the lub of two types that share the same ancestors" $
+      it "should compute the lub of two types that are the same type to be that type" $
         testUpperBound' classEnvironmentMock "Foo" "Foo" "Foo"
+      it "should compute the lub of two types where one is a subtype of the other to be the supertype" $
+        testUpperBound' classEnvironmentMock "Foo" "Bar" "Foo"
       it "should have the lub of a basic class and an object that doesn't inherit from a basic class be an Object" $
         testUpperBound' classEnvironmentMock "Foo" "Int" "Object"
-      it "should have the lub of a basic class and an object that inherits from a basic class be the basic class" $
-        testUpperBound' classEnvironmentWithInheritedBasicClass "Baz" "Int" "Int"
   where
     testSubtype currentClassName classEnvironment possibleSubType parentType result =
       fst (applyParameters currentClassName classEnvironment [] (possibleSubType <== parentType)) `shouldBe` result

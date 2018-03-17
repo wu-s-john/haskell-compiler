@@ -6,8 +6,7 @@ import qualified Data.Map as M
 
 import qualified Parser.AST as AST
 import qualified Parser.TerminalNode as T
-import SemanticAnalyzer.Class
-       (ClassRecord(..), MethodMap, MethodRecord(..))
+import SemanticAnalyzer.Class (MethodMap, MethodRecord(..), getMethods)
 import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
        (ExpressionT(..), LetBindingT(..), computeType)
@@ -56,7 +55,7 @@ semanticCheck (AST.MethodDispatch callerExpression calleeName calleeParameters) 
   (_, classEnvironment) <- ask
   let callerExprClassName = computeType callerExpressionT
   case M.lookup "Foo" classEnvironment of
-    Just (ClassRecord _ _ classMethods _) -> checkCallee calleeName callerExpressionT classMethods calleeParameters
+    Just classRecord -> checkCallee calleeName callerExpressionT (getMethods classRecord) calleeParameters
     Nothing -> tell [DispatchUndefinedClass callerExprClassName] >> errorMethodReturn callerExpressionT calleeName
 
 errorMethodReturn :: ExpressionT -> T.Identifier -> SemanticAnalyzer ExpressionT

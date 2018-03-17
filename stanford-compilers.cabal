@@ -33,6 +33,7 @@ library
                      , SemanticAnalyzer.SemanticAnalyzer
                      , SemanticAnalyzer.SemanticCheck
                      , SemanticAnalyzer.SemanticCheckUtil
+                     , SemanticAnalyzer.PrimitiveTypes
                      , Util
 
   build-depends:       base >= 4.7 && < 5

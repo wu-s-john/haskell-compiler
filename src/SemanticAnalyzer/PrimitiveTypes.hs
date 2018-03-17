@@ -2,6 +2,5 @@
 
 module SemanticAnalyzer.PrimitiveTypes where
 
-["Bool", "String", "Int", "SELF_TYPE"]
-
-
+primitiveTypes :: [String]
+primitiveTypes = ["Bool", "String", "Int"]

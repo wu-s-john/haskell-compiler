@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall -Wcompat #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedLists #-}
 
 module SemanticAnalyzer.Class where
 
@@ -9,6 +10,8 @@ import Data.Maybe (mapMaybe)
 
 import qualified Parser.AST as AST
 import qualified Parser.TerminalNode as T
+
+import Util
 
 data MethodRecord = MethodRecord
   { methodName :: T.Identifier
@@ -32,11 +35,16 @@ data ClassRecord
                 , attributes :: AttributeMap -- contains attributes of a class
                  }
   | ObjectClass
-  | BasicClass { className :: T.Type
-               , methods :: MethodMap }
-  -- todo implement "defaultValue" when doing default value
-  -- todo include IO which only has a class name and methods
+  -- todo implement "defaultValue" when doing translation
   deriving (Show, Eq)
+
+getMethods :: ClassRecord -> MethodMap
+getMethods (ClassRecord _ _ classMethods _) = classMethods
+getMethods ObjectClass =
+  [ "abort" =: MethodRecord "abort" [] "Object"
+  , "type_name" =: MethodRecord "type_name" [] "String"
+  , "copy" =: MethodRecord "copy" [] "SELF_TYPE"
+  ]
 
 class FeatureTransformer a where
   toRecord :: AST.Feature -> Maybe a

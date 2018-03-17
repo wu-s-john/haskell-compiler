@@ -13,6 +13,7 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import Parser.AST (Class(Class), Program(Program))
 import Parser.TerminalNode
+import SemanticAnalyzer.PrimitiveTypes (primitiveTypes)
 
 data ClassError
   = UndefinedInheritance String
@@ -61,7 +62,7 @@ checkIllegalInheritance graph = foldr buildErrors [] (M.toList graph)
       | otherwise = accList
 
 checkPrimitiveInheritance :: Type -> Bool
-checkPrimitiveInheritance parentName = parentName `elem` ["Bool", "String", "Int", "SELF_TYPE"]
+checkPrimitiveInheritance parentName = parentName `elem` "SELF_TYPE":primitiveTypes
 
 checkAcyclicErrors :: ClassInheritanceGraph -> [ClassError]
 checkAcyclicErrors classInheritanceGraph =
