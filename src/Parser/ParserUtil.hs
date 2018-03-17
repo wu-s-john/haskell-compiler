@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -Wall #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Parser.ParserUtil where
 
@@ -6,8 +7,10 @@ import Data.List (find)
 
 import Lexer.Lexer (runAlex, scanner)
 import Lexer.Token
-import Parser.Parser (programParser,featureParser, expressionParser)
 import Parser.AST
+import Parser.Parser
+       (classParser, expressionParser, featureParser, featuresParser,
+        programParser)
 
 scanErrors :: [Token] -> [Token]
 scanErrors tokens =
@@ -22,15 +25,25 @@ scanErrors tokens =
     classifyErrorToken _ = False
 
 stringToAST :: ([Token] -> a) -> String -> a
-stringToAST parser code = parser $
+stringToAST parser code =
+  parser $
   case code `runAlex` scanner of
     Right tokens -> tokens
 
-parseProgram :: String -> Program
-parseProgram = stringToAST programParser
+class Parsable a where
+  parse :: String -> a
 
-parseFeature :: String -> Feature
-parseFeature = stringToAST featureParser
+instance Parsable Program where
+  parse = stringToAST programParser
 
-parseExpression :: String -> Expression
-parseExpression = stringToAST expressionParser
+instance Parsable Class where
+  parse = stringToAST classParser
+
+instance Parsable Feature where
+  parse = stringToAST featureParser
+
+instance Parsable Expression where
+  parse = stringToAST expressionParser
+
+instance Parsable [Feature] where
+  parse = stringToAST featuresParser

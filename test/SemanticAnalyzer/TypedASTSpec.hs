@@ -11,7 +11,7 @@ import Control.Monad.Reader (Reader, runReader, runReaderT)
 import Control.Monad.State (evalState, get)
 import Control.Monad.Writer (runWriterT)
 import Data.Map as M
-import Parser.ParserUtil (parseExpression)
+import Parser.ParserUtil (parse)
 import Parser.TerminalNode as T
 import SemanticAnalyzer.Class
        (ClassEnvironment, ClassRecord(..), MethodRecord(..))
@@ -164,7 +164,7 @@ spec =
         testUpperBound classEnvironmentWithInheritedBasicClass "Baz" "Int" "Int"
   where
     testAnalyzer classEnvironment' objectEnvironment sourceCode result =
-      applyParameters classEnvironment' objectEnvironment (semanticCheck (parseExpression sourceCode)) `shouldBe` result
+      applyParameters classEnvironment' objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe` result
     testSubtype classEnvironment' possibleSubType parentType result =
       runReader ((possibleSubType <== parentType) :: Reader ClassEnvironment Bool) classEnvironment' `shouldBe` result
     testUpperBound classEnvironment' possibleSubType parentType result =

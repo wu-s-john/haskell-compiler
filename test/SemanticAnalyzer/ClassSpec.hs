@@ -10,12 +10,11 @@ import Control.Monad.Writer (runWriter)
 import qualified Data.Map as M
 import Data.Map ()
 import qualified Parser.AST as AST
-import Parser.AST (Formal)
-import Parser.ParserUtil (parseFeature, parseProgram)
+import Parser.ParserUtil (parse)
 import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Class
        (AttributeRecord(..), ClassRecord(..), InheritanceErrors(..),
-        MethodMap(..), MethodRecord(..), createEnvironment,
+        MethodMap, MethodRecord(..), createEnvironment,
         extractAttributeRecord, extractMethodRecord, mergeAttributes,
         mergeMethods)
 import Test.Hspec
@@ -42,8 +41,7 @@ spec =
       it "should parse a method with no parameters" $
         "foo () : Bar {true}" `testMethodRecord` (Just $ MethodRecord "foo" [] "Bar")
       it "should parse a method with parameters" $
-        "foo (x : X, y: Y) : Foo {true}" `testMethodRecord`
-        (Just $ MethodRecord "foo" [("x", "X"), ("y", "Y")] "Foo")
+        "foo (x : X, y: Y) : Foo {true}" `testMethodRecord` (Just $ MethodRecord "foo" [("x", "X"), ("y", "Y")] "Foo")
     describe "attribute" $ do
       it "should not parse a method" $ "foo() : Bar {true}" `testAttributeRecord` Nothing
       it "should parse an attribute" $ "foo : Bar" `testAttributeRecord` (Just $ AttributeRecord "foo" "Bar")
@@ -51,17 +49,17 @@ spec =
       it "should be able to parse a program with a class" $
         createEnvironment M.empty (AST.Program []) `shouldBe` M.empty
       it "should be able to parse a program with an orphaned class" $
-        createEnvironment [("Foo", "Object")] (parseProgram "class Foo {x : X; twice(num: Int): Int {2 * x};};") `shouldBe`
+        createEnvironment [("Foo", "Object")] (parse "class Foo {x : X; twice(num: Int): Int {2 * x};};") `shouldBe`
         ["Foo" =: fooClassRecord]
       it "should be able to retrieve attributes from it's parent class" $
         createEnvironment
           [("Bar", "Foo"), ("Foo", "Object")]
-          (parseProgram "class Foo {x : X; twice(num: Int): Int {2 * x};}; class Bar inherits Bar {};") `shouldBe`
+          (parse "class Foo {x : X; twice(num: Int): Int {2 * x};}; class Bar inherits Bar {};") `shouldBe`
         ["Bar" =: fooFeatures "Bar" fooClassRecord, "Foo" =: fooClassRecord]
       it "should be able to extends attributes from it's parent class" $
         createEnvironment
           [("Bar", "Foo"), ("Foo", "Object")]
-          (parseProgram "class Foo {x : X; twice(num: Int): Int {2 * x};}; class Bar inherits Foo {y : Y;};") `shouldBe`
+          (parse "class Foo {x : X; twice(num: Int): Int {2 * x};}; class Bar inherits Foo {y : Y;};") `shouldBe`
         [ "Bar" =:
           ClassRecord "Bar" fooClassRecord fooMethods ["x" =: AttributeRecord "x" "X", "y" =: AttributeRecord "y" "Y"]
         , "Foo" =: fooClassRecord
@@ -82,14 +80,14 @@ spec =
     describe "mergeMethods" $ do
       it "should not report errors for methods if a class does not inherit methods that it's parent has" $
         testMethod
-          ["foo" =: MethodRecord "foo" [("x", "X"),  ("y", "Y")] "Z"]
+          ["foo" =: MethodRecord "foo" [("x", "X"), ("y", "Y")] "Z"]
           []
-          (["foo" =: MethodRecord "foo" [ ("x", "X"),  ("y", "Y")] "Z"], [])
+          (["foo" =: MethodRecord "foo" [("x", "X"), ("y", "Y")] "Z"], [])
       it "should report errrors for methods if a class does inherit a method with no matching return types" $ -- todo test for inheritance
         testMethod
-          ["foo" =: MethodRecord "foo" [ ("x", "X")] "Z"]
-          ["foo" =: MethodRecord "foo" [ ("x", "X")] "Bar"]
-          (["foo" =: MethodRecord "foo" [ ("x", "X")] "Z"], [DifferentMethodReturnType "Z" "Bar"])
+          ["foo" =: MethodRecord "foo" [("x", "X")] "Z"]
+          ["foo" =: MethodRecord "foo" [("x", "X")] "Bar"]
+          (["foo" =: MethodRecord "foo" [("x", "X")] "Z"], [DifferentMethodReturnType "Z" "Bar"])
   where
     testAttribute className' classAttr parentAttr expectedResult =
       runWriter (mergeAttributes className' classAttr parentAttr) `shouldBe` expectedResult
@@ -97,7 +95,7 @@ spec =
       runWriter (mergeMethods classMethods parentMethods) `shouldBe` expectedResult
 
 testMethodRecord :: String -> Maybe MethodRecord -> Expectation
-testMethodRecord code expected = extractMethodRecord (parseFeature code) `shouldBe` expected
+testMethodRecord code expected = extractMethodRecord (parse code) `shouldBe` expected
 
 testAttributeRecord :: String -> Maybe AttributeRecord -> Expectation
-testAttributeRecord code expected = extractAttributeRecord (parseFeature code) `shouldBe` expected
+testAttributeRecord code expected = extractAttributeRecord (parse code) `shouldBe` expected
