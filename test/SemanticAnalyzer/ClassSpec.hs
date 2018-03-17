@@ -14,9 +14,8 @@ import Parser.ParserUtil (parse)
 import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Class
        (AttributeRecord(..), ClassRecord(..), InheritanceErrors(..),
-        MethodMap, MethodRecord(..), createEnvironment,
-        extractAttributeRecord, extractMethodRecord, mergeAttributes,
-        mergeMethods)
+        MethodMap, MethodRecord(..), createEnvironment, mergeAttributes,
+        mergeMethods, FeatureTransformer,toRecord)
 import Test.Hspec
        (Expectation, Spec, describe, hspec, it, shouldBe)
 import Util
@@ -37,14 +36,14 @@ spec :: Spec
 spec =
   describe "class" $ do
     describe "method" $ do
-      it "should not parse an attribute" $ "foo : Bar" `testMethodRecord` Nothing
+      it "should not parse an attribute" $ "foo : Bar" |-> (Nothing :: Maybe MethodRecord)
       it "should parse a method with no parameters" $
-        "foo () : Bar {true}" `testMethodRecord` (Just $ MethodRecord "foo" [] "Bar")
+        "foo () : Bar {true}" |-> (Just $ MethodRecord "foo" [] "Bar")
       it "should parse a method with parameters" $
-        "foo (x : X, y: Y) : Foo {true}" `testMethodRecord` (Just $ MethodRecord "foo" [("x", "X"), ("y", "Y")] "Foo")
+        "foo (x : X, y: Y) : Foo {true}" |-> (Just $ MethodRecord "foo" [("x", "X"), ("y", "Y")] "Foo")
     describe "attribute" $ do
-      it "should not parse a method" $ "foo() : Bar {true}" `testAttributeRecord` Nothing
-      it "should parse an attribute" $ "foo : Bar" `testAttributeRecord` (Just $ AttributeRecord "foo" "Bar")
+      it "should not parse a method" $ "foo() : Bar {true}" |-> (Nothing :: Maybe AttributeRecord)
+      it "should parse an attribute" $ "foo : Bar" |-> (Just $ AttributeRecord "foo" "Bar")
     describe "createClassEnvironment" $ do
       it "should be able to parse a program with a class" $
         createEnvironment M.empty (AST.Program []) `shouldBe` M.empty
@@ -94,8 +93,5 @@ spec =
     testMethod classMethods parentMethods expectedResult =
       runWriter (mergeMethods classMethods parentMethods) `shouldBe` expectedResult
 
-testMethodRecord :: String -> Maybe MethodRecord -> Expectation
-testMethodRecord code expected = extractMethodRecord (parse code) `shouldBe` expected
-
-testAttributeRecord :: String -> Maybe AttributeRecord -> Expectation
-testAttributeRecord code expected = extractAttributeRecord (parse code) `shouldBe` expected
+(|->) :: FeatureTransformer a => Show a => Eq a=> String -> Maybe a -> Expectation
+code |-> expected = toRecord (parse code) `shouldBe` expected

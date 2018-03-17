@@ -44,24 +44,30 @@ data ClassRecord
   | ObjectClass
   | BasicClass { className :: T.Type
                , methods :: MethodMap }
-  --todo include default values for code translation
+  -- todo implement "defaultValue" when doing default value
   -- todo include IO which only has a class name and methods
   deriving (Show, Eq)
 
-extractMethodRecord :: AST.Feature -> Maybe MethodRecord
-extractMethodRecord feature =
-  case feature of
-    AST.Attribute {} -> Nothing
-    AST.Method name formalParameters' typeName' _ ->
-      Just $ MethodRecord name (map convertFormalToTuple formalParameters') typeName'
-  where
-    convertFormalToTuple (AST.Formal identifierName typeName') = (identifierName, typeName')
+class FeatureTransformer a where
+  toRecord :: AST.Feature -> Maybe a
+  getName :: a -> String
 
-extractAttributeRecord :: AST.Feature -> Maybe AttributeRecord
-extractAttributeRecord feature =
-  case feature of
-    AST.Method {} -> Nothing
-    AST.Attribute name type' _ -> Just $ AttributeRecord name type'
+instance FeatureTransformer MethodRecord where
+  toRecord feature =
+    case feature of
+      AST.Attribute {} -> Nothing
+      AST.Method name formalParameters' typeName' _ ->
+        Just $ MethodRecord name (map convertFormalToTuple formalParameters') typeName'
+    where
+      convertFormalToTuple (AST.Formal identifierName typeName') = (identifierName, typeName')
+  getName (MethodRecord name _ _) = name
+
+instance FeatureTransformer AttributeRecord where
+  toRecord attribute =
+    case attribute of
+      AST.Method {} -> Nothing
+      AST.Attribute name type' _ -> Just $ AttributeRecord name type'
+  getName (AttributeRecord name _) = name
 
 type ClassEnvironment = M.Map String ClassRecord
 
@@ -72,8 +78,8 @@ createEnvironment inheritanceGraph (AST.Program classes) = cache
     cache =
       M.fromList [(className', computeClassRecord className' features) | (AST.Class className' _ features) <- classes]
     computeClassRecord className' features =
-      let newAttributes = extractAttributes features
-          newMethods = extractMethods features
+      let newAttributes = toMap features
+          newMethods = toMap features
           parentName' = inheritanceGraph M.! className'
           parentRecord = cache M.! parentName'
       in if inheritanceGraph M.! className' == "Object"
@@ -105,12 +111,6 @@ mergeMethods classMethods parentMethods = do
          | classMethodReturnType /= parentMethodReturnType
          ]
 
-extractMethods :: [AST.Feature] -> MethodMap
-extractMethods features =
-  M.fromList $
-  map (\methodRecord@(MethodRecord name _ _) -> (name, methodRecord)) $ mapMaybe extractMethodRecord features
-
-extractAttributes :: [AST.Feature] -> AttributeMap
-extractAttributes features =
-  M.fromList $
-  map (\attributeRecord@(AttributeRecord name _) -> (name, attributeRecord)) (mapMaybe extractAttributeRecord features)
+--
+toMap :: FeatureTransformer a => [AST.Feature] -> M.Map T.Identifier a
+toMap features = M.fromList $ map (\methodRecord -> (getName methodRecord, methodRecord)) $ mapMaybe toRecord features

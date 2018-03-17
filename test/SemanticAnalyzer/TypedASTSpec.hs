@@ -34,12 +34,12 @@ fooClassRecord =
     ["call8" =: MethodRecord "call8" [] "Int", "sum" =: MethodRecord "sum" [("a", "Int"), ("b", "Int")] "Int"]
     []
 
-classEnvironment :: ClassEnvironment
-classEnvironment =
+classEnvironmentMock :: ClassEnvironment
+classEnvironmentMock =
   initialClassEnvironment `M.union` ["Foo" =: fooClassRecord, "Bar" =: ClassRecord "Bar" fooClassRecord [] []]
 
 classEnvironmentWithInheritedBasicClass :: ClassEnvironment
-classEnvironmentWithInheritedBasicClass = classEnvironment `M.union` ["Baz" =: ClassRecord "Baz" intRecord [] []]
+classEnvironmentWithInheritedBasicClass = classEnvironmentMock `M.union` ["Baz" =: ClassRecord "Baz" intRecord [] []]
 
 spec :: Spec
 spec =
@@ -62,13 +62,13 @@ spec =
         describe "initial expression is a subtype of it's declared variable" $ do
           it "declared variable is not initialized but is used properly" $
             testAnalyzer
-              classEnvironment
+              classEnvironmentMock
               []
               "let x : Int in x + 5"
               (LetExprT $ LetBindingT "x" "Int" Nothing (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5)), [])
           it "declared variable is used properly" $
             testAnalyzer
-              classEnvironment
+              classEnvironmentMock
               []
               "let x : Int <- 4 in x + 5"
               ( LetExprT $
@@ -76,20 +76,20 @@ spec =
               , [])
           it "declared variable is not used" $
             testAnalyzer
-              classEnvironment
+              classEnvironmentMock
               []
               "let x : Int <- 4 in 5"
               (LetExprT $ LetBindingT "x" "Int" (Just $ IntegerExprT 4) (IntegerExprT 5), [])
           it "overrides variable that was previously declared" $
             testAnalyzer
-              classEnvironment
+              classEnvironmentMock
               ["x" =: "String"]
               "let x : Int <- 4 in x"
               (LetExprT $ LetBindingT "x" "Int" (Just $ IntegerExprT 4) (IdentifierExprT "x" "Int"), [])
         describe "expression is not a subtype of it's declared variable" $
           it "declared variable is still follows it's typing" $
           testAnalyzer
-            classEnvironment
+            classEnvironmentMock
             []
             "let x : Int <- \"Hello World\" in x + 5"
             ( LetExprT $
@@ -102,7 +102,7 @@ spec =
     describe "method dispatch" $ do
       it "should throw an error if a method could not be found for a class" $
         testAnalyzer
-          classEnvironment
+          classEnvironmentMock
           []
           "foo()"
           (MethodDispatchT SelfVarExprT "foo" [] "Object", [UndefinedMethod "foo"])
@@ -113,16 +113,16 @@ spec =
           "baz.foo()"
           (MethodDispatchT (IdentifierExprT "baz" "Baz") "foo" [] "Object", [DispatchUndefinedClass "Baz"])
       it "should parse if it can call a valid method in a valid class with no parameters" $
-        testAnalyzer classEnvironment [] "call8()" (MethodDispatchT SelfVarExprT "call8" [] "Int", [])
+        testAnalyzer classEnvironmentMock [] "call8()" (MethodDispatchT SelfVarExprT "call8" [] "Int", [])
       it "should throw an error if the number of parameters do not match" $
         testAnalyzer
-          classEnvironment
+          classEnvironmentMock
           []
           "call8(8)"
           (MethodDispatchT SelfVarExprT "call8" [IntegerExprT 8] "Int", [WrongNumberParameters "call8"])
       it "should throw an error if the a parameter is not a subtype of it's argument" $
         testAnalyzer
-          classEnvironment
+          classEnvironmentMock
           []
           "sum(\"string\", 2)"
           ( MethodDispatchT SelfVarExprT "sum" [StringExprT "string", IntegerExprT 2] "Int"
@@ -136,39 +136,40 @@ spec =
         return $ "x" `M.member` objectEnvironment `shouldBe` False
     describe "isSubtype" $ -- todo separate the cases for (String and Int) with IO
      do
-      it "a basic class should be a subtype of object" $ testSubtype classEnvironment "String" "Object" True
+      it "a basic class should be a subtype of object" $ testSubtype classEnvironmentMock "String" "Object" True
       it "a basic class should not be a subtype of any constructed type" $
-        testSubtype classEnvironment "String" "Foo" False
+        testSubtype classEnvironmentMock "String" "Foo" False
       it "a basic class should be a subtype of a basic class if they are the same" $
-        testSubtype classEnvironment "String" "String" True
+        testSubtype classEnvironmentMock "String" "String" True
       it "a basic class should not be a subtype of a basic class if they are not the same" $
-        testSubtype classEnvironment "String" "Int" False
+        testSubtype classEnvironmentMock "String" "Int" False
       it "a class record should be a subtype of a basic class only if it inherits the class" $
         testSubtype classEnvironmentWithInheritedBasicClass "Baz" "Int" True
       it "a class record should not be a subtype of a basic class if it does not inherit the class" $
-        testSubtype classEnvironment "Baz" "Int" False
-      it "should return true if two types are subtypes of each other" $ testSubtype classEnvironment "Bar" "Foo" True
+        testSubtype classEnvironmentMock "Baz" "Int" False
+      it "should return true if two types are subtypes of each other" $
+        testSubtype classEnvironmentMock "Bar" "Foo" True
       it "should return false if two types are not subtypes of each other" $
-        testSubtype classEnvironment "Foo" "Bar" False
-      it "should return false if the possible subtype is undefined" $ testSubtype classEnvironment "X" "Foo" False
-      it "should return false if the parent is undefined" $ testSubtype classEnvironment "Foo" "X" False
-      it "should return true if the parent subtype is Object" $ testSubtype classEnvironment "Foo" "Object" True
+        testSubtype classEnvironmentMock "Foo" "Bar" False
+      it "should return false if the possible subtype is undefined" $ testSubtype classEnvironmentMock "X" "Foo" False
+      it "should return false if the parent is undefined" $ testSubtype classEnvironmentMock "Foo" "X" False
+      it "should return true if the parent subtype is Object" $ testSubtype classEnvironmentMock "Foo" "Object" True
     describe "lub (lowest upper bound)" $ do
       it "should return object if two types do not share the same ancestors" $
-        testUpperBound classEnvironment "Foo" "X" "Object"
+        testUpperBound classEnvironmentMock "Foo" "X" "Object"
       it "should compute the lub of two types that share the same ancestors" $
-        testUpperBound classEnvironment "Foo" "Foo" "Foo"
+        testUpperBound classEnvironmentMock "Foo" "Foo" "Foo"
       it "should have the lub of a basic class and an object that doesn't inherit from a basic class be an Object" $
-        testUpperBound classEnvironment "Foo" "Int" "Object"
+        testUpperBound classEnvironmentMock "Foo" "Int" "Object"
       it "should have the lub of a basic class and an object that inherits from a basic class be the basic class" $
         testUpperBound classEnvironmentWithInheritedBasicClass "Baz" "Int" "Int"
   where
-    testAnalyzer classEnvironment' objectEnvironment sourceCode result =
-      applyParameters classEnvironment' objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe` result
-    testSubtype classEnvironment' possibleSubType parentType result =
-      runReader ((possibleSubType <== parentType) :: Reader ClassEnvironment Bool) classEnvironment' `shouldBe` result
-    testUpperBound classEnvironment' possibleSubType parentType result =
-      runReader ((possibleSubType \/ parentType) :: Reader ClassEnvironment T.Type) classEnvironment' `shouldBe` result
+    testAnalyzer classEnvironment objectEnvironment sourceCode result =
+      applyParameters classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe` result
+    testSubtype classEnvironment possibleSubType parentType result =
+      fst (applyParameters classEnvironment [] (possibleSubType <== parentType)) `shouldBe` result
+    testUpperBound classEnvironment possibleSubType parentType result =
+      fst (applyParameters classEnvironment [] (possibleSubType \/ parentType)) `shouldBe` result
 
 applyParameters :: ClassEnvironment -> ObjectEnvironment -> SemanticAnalyzer a -> (a, [SemanticError])
 applyParameters classEnvironment' objectEnvironment semanticAnalyzer =
