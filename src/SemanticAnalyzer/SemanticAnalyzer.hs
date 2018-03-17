@@ -5,7 +5,7 @@ module SemanticAnalyzer.SemanticAnalyzer where
 import qualified Data.Map as M
 import qualified Parser.TerminalNode as T
 import Control.Monad.Reader (ReaderT)
-import SemanticAnalyzer.Class (ClassEnvironment)
+import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
 import Control.Monad.Writer (WriterT)
 import Control.Monad.State (State)
 

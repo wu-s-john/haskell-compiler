@@ -26,6 +26,7 @@ library
                      , Parser.Parser
                      , Parser.ParserUtil
                      , SemanticAnalyzer.ClassChecker
+                     , SemanticAnalyzer.ClassEnvironment
                      , SemanticAnalyzer.Class
                      , SemanticAnalyzer.TypedAST
                      , SemanticAnalyzer.InitialClassEnvironment

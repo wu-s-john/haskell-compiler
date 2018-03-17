@@ -4,6 +4,7 @@
 module SemanticAnalyzer.InitialClassEnvironment where
 
 import SemanticAnalyzer.Class
+import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
 import Util
 
 initialClassEnvironment :: ClassEnvironment

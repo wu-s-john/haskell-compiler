@@ -9,29 +9,27 @@ import qualified Parser.TerminalNode as T
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.State (evalState)
 import Control.Monad.Writer (runWriterT)
-import qualified SemanticAnalyzer.Class as Class
+import SemanticAnalyzer.Class (ClassRecord(..), MethodRecord(..))
+import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
 import SemanticAnalyzer.InitialClassEnvironment
 import SemanticAnalyzer.SemanticAnalyzer
 import Util
 
-fooClassRecord :: Class.ClassRecord
+fooClassRecord :: ClassRecord
 fooClassRecord =
-  Class.ClassRecord
+  ClassRecord
     "Foo"
-    Class.ObjectClass
-    [ "call8" =: Class.MethodRecord "call8" [] "Int"
-    , "sum" =: Class.MethodRecord "sum" [("a", "Int"), ("b", "Int")] "Int"
-    ]
+    ObjectClass
+    ["call8" =: MethodRecord "call8" [] "Int", "sum" =: MethodRecord "sum" [("a", "Int"), ("b", "Int")] "Int"]
     []
 
-classEnvironmentMock :: Class.ClassEnvironment
+classEnvironmentMock :: ClassEnvironment
 classEnvironmentMock =
-  initialClassEnvironment `M.union` ["Foo" =: fooClassRecord, "Bar" =: Class.ClassRecord "Bar" fooClassRecord [] []]
+  initialClassEnvironment `M.union` ["Foo" =: fooClassRecord, "Bar" =: ClassRecord "Bar" fooClassRecord [] []]
 
-classEnvironmentWithInheritedBasicClass :: Class.ClassEnvironment
-classEnvironmentWithInheritedBasicClass =
-  classEnvironmentMock `M.union` ["Baz" =: Class.ClassRecord "Baz" intRecord [] []]
+classEnvironmentWithInheritedBasicClass :: ClassEnvironment
+classEnvironmentWithInheritedBasicClass = classEnvironmentMock `M.union` ["Baz" =: ClassRecord "Baz" intRecord [] []]
 
-applyParameters :: T.Type -> Class.ClassEnvironment -> ObjectEnvironment -> SemanticAnalyzer a -> (a, [SemanticError])
+applyParameters :: T.Type -> ClassEnvironment -> ObjectEnvironment -> SemanticAnalyzer a -> (a, [SemanticError])
 applyParameters currentClassName classEnvironment objectEnvironment semanticAnalyzer =
   evalState (runWriterT (runReaderT semanticAnalyzer (currentClassName, classEnvironment))) objectEnvironment
