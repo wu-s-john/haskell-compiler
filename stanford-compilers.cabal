@@ -29,6 +29,9 @@ library
                      , SemanticAnalyzer.Class
                      , SemanticAnalyzer.TypedAST
                      , SemanticAnalyzer.InitialClassEnvironment
+                     , SemanticAnalyzer.SemanticAnalyzer
+                     , SemanticAnalyzer.SemanticCheck
+                     , SemanticAnalyzer.SemanticCheckUtil
                      , Util
 
   build-depends:       base >= 4.7 && < 5

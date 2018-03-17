@@ -1,73 +1,53 @@
 {-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedLists #-}
 
 module SemanticAnalyzer.TypedASTSpec
   ( main
   , spec
   ) where
 
-import Control.Monad.Reader (Reader, runReader, runReaderT)
-import Control.Monad.State (evalState, get)
-import Control.Monad.Writer (runWriterT)
-import Data.Map as M
 import Parser.ParserUtil (parse)
-import Parser.TerminalNode as T
-import SemanticAnalyzer.Class
-       (ClassEnvironment, ClassRecord(..), MethodRecord(..))
-import SemanticAnalyzer.InitialClassEnvironment
 import SemanticAnalyzer.TypedAST
-       (ExpressionT(..), LetBindingT(..), ObjectEnvironment,
-        SemanticAnalyzer, SemanticError(..), (/>), (<==), (\/),
-        semanticCheck)
+       (ExpressionT(..), LetBindingT(..))
+import SemanticAnalyzer.SemanticAnalyzer
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 import Util
+import SemanticAnalyzer.SemanticCheck (semanticCheck)
+import SemanticAnalyzer.Util
 
 main :: IO ()
 main = hspec spec
 
-fooClassRecord :: ClassRecord
-fooClassRecord =
-  ClassRecord
-    "Foo"
-    ObjectClass
-    ["call8" =: MethodRecord "call8" [] "Int", "sum" =: MethodRecord "sum" [("a", "Int"), ("b", "Int")] "Int"]
-    []
-
-classEnvironmentMock :: ClassEnvironment
-classEnvironmentMock =
-  initialClassEnvironment `M.union` ["Foo" =: fooClassRecord, "Bar" =: ClassRecord "Bar" fooClassRecord [] []]
-
-classEnvironmentWithInheritedBasicClass :: ClassEnvironment
-classEnvironmentWithInheritedBasicClass = classEnvironmentMock `M.union` ["Baz" =: ClassRecord "Baz" intRecord [] []]
 
 spec :: Spec
 spec =
   describe "Semantic Analysis" $ do
     describe " binary arithmetic" $ do
       it "should annotate correctly a plus operator" $
-        testAnalyzer [] [] "1 + 2" (PlusExprT (IntegerExprT 1) (IntegerExprT 2), [])
+        testAnalyzer' [] [] "1 + 2" (PlusExprT (IntegerExprT 1) (IntegerExprT 2), [])
       it "should parse an error of a plus operator" $
-        testAnalyzer
+        testAnalyzer'
           []
           []
           "\"string\" + 2"
           (PlusExprT (StringExprT "string") (IntegerExprT 2), [NonIntArgumentsPlus "String" "Int"])
     describe "identifier" $ do
-      it "should find the type of a variable" $ testAnalyzer [] ["foo" =: "Foo"] "foo" (IdentifierExprT "foo" "Foo", [])
+      it "should find the type of a variable" $
+        testAnalyzer' [] ["foo" =: "Foo"] "foo" (IdentifierExprT "foo" "Foo", [])
       it "should throw an error when identifier is not in the object environment" $
-        testAnalyzer [] [] "foo" (IdentifierExprT "foo" "Object", [UndeclaredIdentifier "foo"])
+        testAnalyzer' [] [] "foo" (IdentifierExprT "foo" "Object", [UndeclaredIdentifier "foo"])
     describe "let expression" $
       describe "letBindingT" $ do
         describe "initial expression is a subtype of it's declared variable" $ do
           it "declared variable is not initialized but is used properly" $
-            testAnalyzer
+            testAnalyzer'
               classEnvironmentMock
               []
               "let x : Int in x + 5"
               (LetExprT $ LetBindingT "x" "Int" Nothing (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5)), [])
           it "declared variable is used properly" $
-            testAnalyzer
+            testAnalyzer'
               classEnvironmentMock
               []
               "let x : Int <- 4 in x + 5"
@@ -75,20 +55,20 @@ spec =
                 LetBindingT "x" "Int" (Just $ IntegerExprT 4) (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5))
               , [])
           it "declared variable is not used" $
-            testAnalyzer
+            testAnalyzer'
               classEnvironmentMock
               []
               "let x : Int <- 4 in 5"
               (LetExprT $ LetBindingT "x" "Int" (Just $ IntegerExprT 4) (IntegerExprT 5), [])
           it "overrides variable that was previously declared" $
-            testAnalyzer
+            testAnalyzer'
               classEnvironmentMock
               ["x" =: "String"]
               "let x : Int <- 4 in x"
               (LetExprT $ LetBindingT "x" "Int" (Just $ IntegerExprT 4) (IdentifierExprT "x" "Int"), [])
         describe "expression is not a subtype of it's declared variable" $
           it "declared variable is still follows it's typing" $
-          testAnalyzer
+          testAnalyzer'
             classEnvironmentMock
             []
             "let x : Int <- \"Hello World\" in x + 5"
@@ -101,76 +81,35 @@ spec =
             , [MismatchDeclarationType "String" "Int"])
     describe "method dispatch" $ do
       it "should throw an error if a method could not be found for a class" $
-        testAnalyzer
+        testAnalyzer'
           classEnvironmentMock
           []
           "foo()"
           (MethodDispatchT SelfVarExprT "foo" [] "Object", [UndefinedMethod "foo"])
       it "should throw an error if the caller expression returns an undefined class" $
-        testAnalyzer
+        testAnalyzer'
           []
           ["baz" =: "Baz"]
           "baz.foo()"
           (MethodDispatchT (IdentifierExprT "baz" "Baz") "foo" [] "Object", [DispatchUndefinedClass "Baz"])
       it "should parse if it can call a valid method in a valid class with no parameters" $
-        testAnalyzer classEnvironmentMock [] "call8()" (MethodDispatchT SelfVarExprT "call8" [] "Int", [])
+        testAnalyzer' classEnvironmentMock [] "call8()" (MethodDispatchT SelfVarExprT "call8" [] "Int", [])
       it "should throw an error if the number of parameters do not match" $
-        testAnalyzer
+        testAnalyzer'
           classEnvironmentMock
           []
           "call8(8)"
           (MethodDispatchT SelfVarExprT "call8" [IntegerExprT 8] "Int", [WrongNumberParameters "call8"])
       it "should throw an error if the a parameter is not a subtype of it's argument" $
-        testAnalyzer
+        testAnalyzer'
           classEnvironmentMock
           []
           "sum(\"string\", 2)"
           ( MethodDispatchT SelfVarExprT "sum" [StringExprT "string", IntegerExprT 2] "Int"
           , [WrongParameterType "sum" "a" "Int" "String"])
-    describe "/>" $
-      it "should set a new variable and is a pplied only to an inner scope" $
-      fst $
-      applyParameters [] [] $ do
-        _ <- ("x", "Int") /> (get >>= (\objectEnvironment -> return $ "x" `M.member` objectEnvironment `shouldBe` True))
-        objectEnvironment <- get
-        return $ "x" `M.member` objectEnvironment `shouldBe` False
-    describe "isSubtype" $ -- todo separate the cases for (String and Int) with IO
-     do
-      it "a basic class should be a subtype of object" $ testSubtype classEnvironmentMock "String" "Object" True
-      it "a basic class should not be a subtype of any constructed type" $
-        testSubtype classEnvironmentMock "String" "Foo" False
-      it "a basic class should be a subtype of a basic class if they are the same" $
-        testSubtype classEnvironmentMock "String" "String" True
-      it "a basic class should not be a subtype of a basic class if they are not the same" $
-        testSubtype classEnvironmentMock "String" "Int" False
-      it "a class record should be a subtype of a basic class only if it inherits the class" $
-        testSubtype classEnvironmentWithInheritedBasicClass "Baz" "Int" True
-      it "a class record should not be a subtype of a basic class if it does not inherit the class" $
-        testSubtype classEnvironmentMock "Baz" "Int" False
-      it "should return true if two types are subtypes of each other" $
-        testSubtype classEnvironmentMock "Bar" "Foo" True
-      it "should return false if two types are not subtypes of each other" $
-        testSubtype classEnvironmentMock "Foo" "Bar" False
-      it "should return false if the possible subtype is undefined" $ testSubtype classEnvironmentMock "X" "Foo" False
-      it "should return false if the parent is undefined" $ testSubtype classEnvironmentMock "Foo" "X" False
-      it "should return true if the parent subtype is Object" $ testSubtype classEnvironmentMock "Foo" "Object" True
-    describe "lub (lowest upper bound)" $ do
-      it "should return object if two types do not share the same ancestors" $
-        testUpperBound classEnvironmentMock "Foo" "X" "Object"
-      it "should compute the lub of two types that share the same ancestors" $
-        testUpperBound classEnvironmentMock "Foo" "Foo" "Foo"
-      it "should have the lub of a basic class and an object that doesn't inherit from a basic class be an Object" $
-        testUpperBound classEnvironmentMock "Foo" "Int" "Object"
-      it "should have the lub of a basic class and an object that inherits from a basic class be the basic class" $
-        testUpperBound classEnvironmentWithInheritedBasicClass "Baz" "Int" "Int"
   where
-    testAnalyzer classEnvironment objectEnvironment sourceCode result =
-      applyParameters classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe` result
-    testSubtype classEnvironment possibleSubType parentType result =
-      fst (applyParameters classEnvironment [] (possibleSubType <== parentType)) `shouldBe` result
-    testUpperBound classEnvironment possibleSubType parentType result =
-      fst (applyParameters classEnvironment [] (possibleSubType \/ parentType)) `shouldBe` result
+    testAnalyzer currentClassName classEnvironment objectEnvironment sourceCode result =
+      applyParameters currentClassName classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe`
+      result
+    testAnalyzer' = testAnalyzer ""
 
-applyParameters :: ClassEnvironment -> ObjectEnvironment -> SemanticAnalyzer a -> (a, [SemanticError])
-applyParameters classEnvironment' objectEnvironment semanticAnalyzer =
-  evalState (runWriterT (runReaderT semanticAnalyzer classEnvironment')) objectEnvironment

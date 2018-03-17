@@ -105,7 +105,7 @@ checkPath classChecker classPath = do
       subresult <- checkPath (return (classGraph M.! currentClass)) (currentClass : classPath)
       case subresult of
         CyclicPath parentPath ->
-          when (notElem currentClass parentPath) (tell [InheritanceCycle currentClass]) >>
+          when (currentClass `notElem` parentPath) (tell [InheritanceCycle currentClass]) >>
           return (CyclicPath parentPath)
         AcyclicPath parentPath -> return (AcyclicPath parentPath)
 
