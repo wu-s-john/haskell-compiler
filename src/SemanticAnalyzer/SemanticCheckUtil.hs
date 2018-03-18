@@ -19,7 +19,6 @@ import SemanticAnalyzer.SemanticAnalyzer (SemanticAnalyzer)
 
 import Control.Monad.Reader (ask)
 import Control.Monad.State (get, put)
-import Data.String (fromString)
 import Parser.TerminalNode (Identifier)
 import SemanticAnalyzer.PrimitiveTypes (primitiveTypes)
 import SemanticAnalyzer.Type (Type(..))
@@ -58,11 +57,13 @@ instance Categorical ClassRecord Identity where
         | otherwise = lub parent' ancestors
 
 instance Categorical Type SemanticAnalyzer where
+  (TypeName _) <== SELF_TYPE = return False
   possibleSubType <== parentType = do
     parentClassRecord <- getClassRecord parentType
     subclassRecord <- getClassRecord possibleSubType
     return (runIdentity $ subclassRecord <== parentClassRecord)
-  leftType \/ rightType --todo deal with SELF-TYPE
+  SELF_TYPE \/ SELF_TYPE = return SELF_TYPE
+  leftType \/ rightType
    = do
     leftClassRecord <- getClassRecord leftType
     rightClassRecord <- getClassRecord rightType
@@ -77,4 +78,7 @@ getClassRecord (TypeName currentClassName) = do
      | otherwise ->
        case currentClassName `M.lookup` classEnvironment of
          Just classRecord -> return classRecord
-         Nothing -> return (ClassRecord currentClassName ObjectClass M.empty M.empty) --todo deal with SELF-TYPE
+         Nothing -> return (ClassRecord currentClassName ObjectClass M.empty M.empty)
+getClassRecord SELF_TYPE = do
+  (typeName, _) <- ask
+  getClassRecord (TypeName typeName)
