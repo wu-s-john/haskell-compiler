@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module SemanticAnalyzer.TypedASTSpec
+module SemanticAnalyzer.SemanticCheckSpec
   ( main
   , spec
   ) where
