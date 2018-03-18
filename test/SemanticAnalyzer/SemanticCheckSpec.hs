@@ -9,17 +9,15 @@ module SemanticAnalyzer.SemanticCheckSpec
   ) where
 
 import Parser.ParserUtil (parse)
-import SemanticAnalyzer.TypedAST
-       (ExpressionT(..), LetBindingT(..))
 import SemanticAnalyzer.SemanticAnalyzer
+import SemanticAnalyzer.SemanticCheck (semanticCheck)
+import SemanticAnalyzer.TypedAST (ExpressionT(..), LetBindingT(..))
+import SemanticAnalyzer.Util
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 import Util
-import SemanticAnalyzer.SemanticCheck (semanticCheck)
-import SemanticAnalyzer.Util
 
 main :: IO ()
 main = hspec spec
-
 
 spec :: Spec
 spec =
@@ -38,6 +36,12 @@ spec =
         testAnalyzer' [] ["foo" =: "Foo"] "foo" (IdentifierExprT "foo" "Foo", [])
       it "should throw an error when identifier is not in the object environment" $
         testAnalyzer' [] [] "foo" (IdentifierExprT "foo" "Object", [UndeclaredIdentifier "foo"])
+    describe "new" $ do
+      it "should annotate a new expression for a regular type" $ testAnalyzer "Foo" classEnvironmentMock [] "new Foo" (NewExprT "Foo" "Foo", [])
+      it "should annotate a new expression for SELF_TYPE" $
+        testAnalyzer "Foo" classEnvironmentMock [] "new SELF_TYPE" (NewExprT "SELF_TYPE" "SELF_TYPE", [])
+      it "should annotate a new expression for SELF_TYPE" $
+        testAnalyzer "Foo" [] [] "new Bar" (NewExprT "Bar" "Object", [UndefinedNewType "Bar"])
     describe "let expression" $
       describe "letBindingT" $ do
         describe "initial expression is a subtype of it's declared variable" $ do

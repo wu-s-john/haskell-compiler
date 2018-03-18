@@ -15,13 +15,15 @@ data ExpressionT
               , right :: ExpressionT }
   | StringExprT String
   | IdentifierExprT { name :: T.Identifier
-                    , typeName :: Type }
+                    , typeVal :: Type }
   | LetExprT LetBindingT
   | MethodDispatchT { expr :: ExpressionT
                     , methodName :: T.Identifier
                     , parameters :: [ExpressionT]
-                    , typeName :: Type }
+                    , typeVal :: Type }
   | SelfVarExprT
+  | NewExprT { className :: String
+             , typeVal :: Type }
   deriving (Show, Eq)
 
 data LetBindingT
@@ -37,7 +39,7 @@ data LetBindingT
 
 computeType :: ExpressionT -> Type
 computeType (IntegerExprT _) = TypeName "Int"
-computeType (PlusExprT _ _) = TypeName  "Int"
-computeType (StringExprT _) = TypeName  "String"
+computeType (PlusExprT _ _) = TypeName "Int"
+computeType (StringExprT _) = TypeName "String"
 computeType (IdentifierExprT _ classType) = classType
 computeType SelfVarExprT = SELF_TYPE

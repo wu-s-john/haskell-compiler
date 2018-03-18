@@ -15,8 +15,10 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 
 import SemanticAnalyzer.Class (ClassRecord(..))
-import SemanticAnalyzer.SemanticAnalyzer (SemanticAnalyzer)
+import SemanticAnalyzer.SemanticAnalyzer
+       (SemanticAnalyzer, lookupClass)
 
+import Control.Monad.Extra (maybeM)
 import Control.Monad.Reader (ask)
 import Control.Monad.State (get, put)
 import Parser.TerminalNode (Identifier)
@@ -63,8 +65,7 @@ instance Categorical Type SemanticAnalyzer where
     subclassRecord <- getClassRecord possibleSubType
     return (runIdentity $ subclassRecord <== parentClassRecord)
   SELF_TYPE \/ SELF_TYPE = return SELF_TYPE
-  leftType \/ rightType
-   = do
+  leftType \/ rightType = do
     leftClassRecord <- getClassRecord leftType
     rightClassRecord <- getClassRecord rightType
     case runIdentity $ leftClassRecord \/ rightClassRecord of
@@ -72,13 +73,10 @@ instance Categorical Type SemanticAnalyzer where
       ObjectClass -> return (TypeName "Object")
 
 getClassRecord :: Type -> SemanticAnalyzer ClassRecord
-getClassRecord (TypeName currentClassName) = do
-  (_, classEnvironment) <- ask
+getClassRecord (TypeName currentClassName) =
   if | currentClassName == "Object" -> return ObjectClass
      | otherwise ->
-       case currentClassName `M.lookup` classEnvironment of
-         Just classRecord -> return classRecord
-         Nothing -> return (ClassRecord currentClassName ObjectClass M.empty M.empty)
+       maybeM (return (ClassRecord currentClassName ObjectClass M.empty M.empty)) return (lookupClass currentClassName)
 getClassRecord SELF_TYPE = do
   (typeName, _) <- ask
   getClassRecord (TypeName typeName)

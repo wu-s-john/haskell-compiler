@@ -44,6 +44,7 @@ library
                      , containers
                      , array
                      , monad-loops
+                     , extra
   default-language:    Haskell2010
 
 executable stanford-compilers

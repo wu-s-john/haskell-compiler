@@ -8,23 +8,30 @@ import qualified Data.Map as M
 
 import qualified Parser.AST as AST
 import qualified Parser.TerminalNode as T
-import SemanticAnalyzer.Class
-       (MethodMap, MethodRecord(..), getMethods)
+import SemanticAnalyzer.Class (MethodMap, MethodRecord(..), getMethods)
 import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
        (ExpressionT(..), LetBindingT(..), computeType)
 
 import Control.Monad (unless, zipWithM)
-import Control.Monad.Reader (ask)
+import Control.Monad.Extra (maybeM)
 import Control.Monad.State (get)
 import Control.Monad.Writer (tell)
 import Data.String (fromString)
 import SemanticAnalyzer.SemanticAnalyzer
-import SemanticAnalyzer.Type (Type(TypeName))
+import SemanticAnalyzer.Type (Type(SELF_TYPE, TypeName))
 
 semanticCheck :: AST.Expression -> SemanticAnalyzer ExpressionT
 semanticCheck (AST.IntegerExpr value) = return (IntegerExprT value)
 semanticCheck (AST.StringExpr value) = return (StringExprT value)
+semanticCheck (AST.NewExpr typeString) =
+  case fromString typeString of
+    SELF_TYPE -> return $ NewExprT typeString SELF_TYPE
+    (TypeName _) ->
+      maybeM
+        (tell [UndefinedNewType typeString] >> return (NewExprT typeString (TypeName "Object")))
+        (\_ -> return $ NewExprT typeString (fromString typeString))
+        (lookupClass typeString)
 semanticCheck (AST.PlusExpr leftExpression rightExpression) = do
   annotatedLeft <- semanticCheck leftExpression
   annotatedRight <- semanticCheck rightExpression
@@ -58,11 +65,10 @@ semanticCheck (AST.LetExpr (AST.LetBinding newVariable newVariableTypeName maybe
 semanticCheck AST.SelfVarExpr = return SelfVarExprT
 semanticCheck (AST.MethodDispatch callerExpression calleeName calleeParameters) = do
   callerExpressionT <- semanticCheck callerExpression
-  (_, classEnvironment) <- ask
-  case M.lookup "Foo" classEnvironment of
-    Just classRecord -> checkCallee calleeName callerExpressionT (getMethods classRecord) calleeParameters
-    Nothing ->
-      tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName
+  maybeM
+    (tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName)
+    (\classRecord -> checkCallee calleeName callerExpressionT (getMethods classRecord) calleeParameters)
+    (lookupClass "Foo")
 
 errorMethodReturn :: ExpressionT -> T.Identifier -> SemanticAnalyzer ExpressionT
 errorMethodReturn initialExpressionT calleeName =
