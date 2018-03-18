@@ -7,6 +7,7 @@
 module SemanticAnalyzer.TypedAST where
 
 import qualified Parser.TerminalNode as T
+import SemanticAnalyzer.Type
 
 data ExpressionT
   = IntegerExprT Int
@@ -14,29 +15,29 @@ data ExpressionT
               , right :: ExpressionT }
   | StringExprT String
   | IdentifierExprT { name :: T.Identifier
-                    , typeName :: T.Type }
+                    , typeName :: Type }
   | LetExprT LetBindingT
   | MethodDispatchT { expr :: ExpressionT
                     , methodName :: T.Identifier
                     , parameters :: [ExpressionT]
-                    , typeName :: T.Type }
+                    , typeName :: Type }
   | SelfVarExprT
   deriving (Show, Eq)
 
 data LetBindingT
   = LetBindingT { getIdentifier :: T.Identifier
-                , getType :: T.Type
+                , getType :: Type
                 , getInitExpr :: Maybe ExpressionT
                 , getExpr :: ExpressionT }
   | LetDeclarationT { getIdentifier :: T.Identifier
-                    , getType :: T.Type
+                    , getType :: Type
                     , getInitExpr :: Maybe ExpressionT
                     , getLetBinding :: LetBindingT }
   deriving (Show, Eq)
 
-computeType :: ExpressionT -> T.Type
-computeType (IntegerExprT _) = "Int"
-computeType (PlusExprT _ _) = "Int"
-computeType (StringExprT _) = "String"
-computeType (IdentifierExprT _ typeName') = typeName'
-computeType SelfVarExprT = "self"
+computeType :: ExpressionT -> Type
+computeType (IntegerExprT _) = TypeName "Int"
+computeType (PlusExprT _ _) = TypeName  "Int"
+computeType (StringExprT _) = TypeName  "String"
+computeType (IdentifierExprT _ classType) = classType
+computeType SelfVarExprT = SELF_TYPE

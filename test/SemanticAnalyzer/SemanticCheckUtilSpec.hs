@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 
 module SemanticAnalyzer.SemanticCheckUtilSpec
@@ -10,12 +11,14 @@ module SemanticAnalyzer.SemanticCheckUtilSpec
 import qualified Data.Map as M
 
 import Control.Monad.State (get)
-import Test.Hspec (Spec, describe, hspec, it, shouldBe)
+import Test.Hspec (Spec, describe, hspec, it, shouldBe,Expectation)
 
 import SemanticAnalyzer.Class (ClassRecord(..))
 import SemanticAnalyzer.InitialClassEnvironment
 import SemanticAnalyzer.SemanticCheckUtil ((/>), (<==), (\/))
 import SemanticAnalyzer.Util
+import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
+import SemanticAnalyzer.Type (Type)
 
 main :: IO ()
 main = hspec spec
@@ -63,10 +66,18 @@ spec =
         testUpperBound' classEnvironmentMock "Foo" "Bar" "Foo"
       it "should have the lub of a basic class and an object that doesn't inherit from a basic class be an Object" $
         testUpperBound' classEnvironmentMock "Foo" "Int" "Object"
-  where
-    testSubtype currentClassName classEnvironment possibleSubType parentType result =
-      fst (applyParameters currentClassName classEnvironment [] (possibleSubType <== parentType)) `shouldBe` result
-    testSubtype' = testSubtype ""
-    testUpperBound currentClassName classEnvironment possibleSubType parentType result =
-      fst (applyParameters currentClassName classEnvironment [] (possibleSubType \/ parentType)) `shouldBe` result
-    testUpperBound' = testUpperBound ""
+
+
+testSubtype :: String -> ClassEnvironment -> Type -> Type -> Bool -> Expectation
+testSubtype currentClass classEnvironment possibleSubType parentType result =
+  fst (applyParameters currentClass classEnvironment [] (possibleSubType <== parentType)) `shouldBe` result
+
+testSubtype' :: ClassEnvironment -> Type -> Type -> Bool -> Expectation
+testSubtype' = testSubtype ""
+
+testUpperBound :: String -> ClassEnvironment -> Type -> Type -> Type -> Expectation
+testUpperBound currentClass classEnvironment possibleSubType parentType result =
+  fst (applyParameters currentClass classEnvironment [] (possibleSubType \/ parentType)) `shouldBe` result
+
+testUpperBound' :: ClassEnvironment -> Type -> Type -> Type -> Expectation
+testUpperBound' = testUpperBound ""

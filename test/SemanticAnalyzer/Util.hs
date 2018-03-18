@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module SemanticAnalyzer.Util where
 
 import qualified Data.Map as M
-import qualified Parser.TerminalNode as T
 
 import Control.Monad.Reader (runReaderT)
 import Control.Monad.State (evalState)
@@ -28,6 +28,6 @@ classEnvironmentMock =
   initialClassEnvironment `M.union`
   ["Foo" =: fooClassRecord, "Bar" =: ClassRecord "Bar" fooClassRecord [] [], "Quux" =: ClassRecord "Quux" ObjectClass [] []]
 
-applyParameters :: T.Type -> ClassEnvironment -> ObjectEnvironment -> SemanticAnalyzer a -> (a, [SemanticError])
-applyParameters currentClassName classEnvironment objectEnvironment semanticAnalyzer =
-  evalState (runWriterT (runReaderT semanticAnalyzer (currentClassName, classEnvironment))) objectEnvironment
+applyParameters :: String -> ClassEnvironment -> ObjectEnvironment -> SemanticAnalyzer a -> (a, [SemanticError])
+applyParameters classType classEnvironment objectEnvironment semanticAnalyzer =
+  evalState (runWriterT (runReaderT semanticAnalyzer (classType, classEnvironment))) objectEnvironment

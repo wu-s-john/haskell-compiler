@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module SemanticAnalyzer.TypedASTSpec
   ( main
@@ -112,4 +113,3 @@ spec =
       applyParameters currentClassName classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe`
       result
     testAnalyzer' = testAnalyzer ""
-

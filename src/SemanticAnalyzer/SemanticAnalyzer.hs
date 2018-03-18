@@ -2,28 +2,28 @@
 
 module SemanticAnalyzer.SemanticAnalyzer where
 
-import qualified Data.Map as M
-import qualified Parser.TerminalNode as T
 import Control.Monad.Reader (ReaderT)
-import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
-import Control.Monad.Writer (WriterT)
 import Control.Monad.State (State)
+import Control.Monad.Writer (WriterT)
+import qualified Data.Map as M
+import Parser.TerminalNode (Identifier)
+import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
+import SemanticAnalyzer.Type (Type(..))
 
 data SemanticError
-  = NonIntArgumentsPlus { left :: T.Type
-                        , right :: T.Type }
-  | UndeclaredIdentifier T.Identifier
-  | MismatchDeclarationType { inferredType :: T.Type
-                            , declaredType :: T.Type }
-  | UndefinedMethod { methodName :: T.Identifier }
-  | DispatchUndefinedClass { className :: T.Type }
-  | WrongNumberParameters { methodName :: T.Identifier }
-  | WrongParameterType { methodName :: T.Identifier
-                       , parameterName :: T.Identifier
-                       , formalType :: T.Type
-                       , expressionType :: T.Type }
+  = NonIntArgumentsPlus { left :: Type
+                        , right :: Type }
+  | UndeclaredIdentifier Identifier
+  | MismatchDeclarationType { inferredType :: Type
+                            , declaredType :: Type }
+  | UndefinedMethod { methodName :: Identifier }
+  | DispatchUndefinedClass { className :: Type }
+  | WrongNumberParameters { methodName :: Identifier }
+  | WrongParameterType { methodName :: Identifier
+                       , parameterName :: Identifier
+                       , formalType :: Type
+                       , expressionType :: Type }
   deriving (Show, Eq)
 
-
-type ObjectEnvironment = M.Map T.Identifier T.Type
-type SemanticAnalyzer = ReaderT (T.Type, ClassEnvironment) (WriterT [SemanticError] (State ObjectEnvironment))
+type ObjectEnvironment = M.Map Identifier Type
+type SemanticAnalyzer = ReaderT (String, ClassEnvironment) (WriterT [SemanticError] (State ObjectEnvironment))

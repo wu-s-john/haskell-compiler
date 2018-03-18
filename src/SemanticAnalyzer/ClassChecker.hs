@@ -12,7 +12,7 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Set as S
 import Parser.AST (Class(Class), Program(Program))
-import Parser.TerminalNode
+import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.PrimitiveTypes (primitiveTypes)
 
 data ClassError
@@ -24,7 +24,7 @@ data ClassError
   | PreviouslyDefined String
   deriving (Show, Eq)
 
-type ClassInheritanceGraph = M.Map Type Type
+type ClassInheritanceGraph = M.Map T.Type T.Type
 
 type ClassGraphBuilder = Writer [ClassError] ClassInheritanceGraph
 
@@ -34,15 +34,15 @@ data GraphCheckerResult
   deriving (Show, Eq)
 
 data AcyclicClassState = AcyclicClassState
-  { getVisitedNodes :: [Type]
-  , getCycleNodes :: [Type]
+  { getVisitedNodes :: [T.Type]
+  , getCycleNodes :: [T.Type]
   } deriving (Show, Eq)
 
 type AcyclicClassChecker = ReaderT ClassInheritanceGraph (WriterT [ClassError] (State AcyclicClassState))
 
 data Path
-  = CyclicPath [Type]
-  | AcyclicPath [Type]
+  = CyclicPath [T.Type]
+  | AcyclicPath [T.Type]
   deriving (Show, Eq)
 
 createClassGraph :: Program -> ClassGraphBuilder
@@ -61,7 +61,7 @@ checkIllegalInheritance graph = foldr buildErrors [] (M.toList graph)
       | M.notMember parentName graph && parentName /= "Object" = UndefinedInheritance className parentName : accList
       | otherwise = accList
 
-checkPrimitiveInheritance :: Type -> Bool
+checkPrimitiveInheritance :: T.Type -> Bool
 checkPrimitiveInheritance parentName = parentName `elem` "SELF_TYPE":primitiveTypes
 
 checkAcyclicErrors :: ClassInheritanceGraph -> [ClassError]
@@ -87,7 +87,7 @@ acyclicAnalyzerBody = do
     CyclicPath newCyclicClasses -> put (AcyclicClassState visitedNodes (cyclicNodes ++ newCyclicClasses))
     AcyclicPath discoveredClasses' -> put (AcyclicClassState (visitedNodes ++ discoveredClasses') cyclicNodes)
 
-checkPath :: AcyclicClassChecker Type -> [Type] -> AcyclicClassChecker Path
+checkPath :: AcyclicClassChecker T.Type -> [T.Type] -> AcyclicClassChecker Path
 checkPath classChecker classPath = do
   classGraph <- ask
   (AcyclicClassState visitedNodes cycleNodes) <- get

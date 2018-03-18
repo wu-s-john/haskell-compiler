@@ -6,15 +6,16 @@ import Control.Monad (join)
 import Control.Monad.Writer (Writer, tell)
 import qualified Data.Map as M
 import Parser.AST (Class(..), Program(..))
-import Parser.TerminalNode (Type)
 import SemanticAnalyzer.Class
        (AttributeMap, ClassRecord(..), MethodMap, MethodRecord(..), toMap)
 import qualified SemanticAnalyzer.ClassChecker as CC
+import SemanticAnalyzer.Type (Type(..))
+import qualified Parser.TerminalNode as T
 
 type ClassEnvironment = M.Map String ClassRecord
 
 data InheritanceErrors
-  = RedefinedAttribute { attributeName :: String
+  = RedefinedAttribute { attributeName :: T.Identifier
                        , inheritedParent :: Type }
   | DifferentMethodReturnType { newType :: Type
                               , originalType :: Type }
@@ -24,7 +25,7 @@ data InheritanceErrors
 createEnvironment :: CC.ClassInheritanceGraph -> Program -> ClassEnvironment
 createEnvironment inheritanceGraph (Program classes) = cache
   where
-    cache = M.fromList [(className', computeClassRecord className' features) | (Class className' _ features) <- classes]
+    cache = M.fromList $ map toClassTupleRecord classes
     computeClassRecord className' features =
       let newAttributes = toMap features
           newMethods = toMap features
@@ -37,6 +38,7 @@ createEnvironment inheritanceGraph (Program classes) = cache
                   parentRecord
                   (newMethods `M.union` methods parentRecord)
                   (newAttributes `M.union` attributes parentRecord)
+    toClassTupleRecord (Class currentClassName _ features) = (currentClassName, computeClassRecord currentClassName features)
 
 mergeAttributes :: Type -> AttributeMap -> AttributeMap -> Writer [InheritanceErrors] AttributeMap
 mergeAttributes className' classAttrs parentAttr = do
