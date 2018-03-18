@@ -35,3 +35,8 @@ lookupClass :: String -> SemanticAnalyzer (Maybe ClassRecord)
 lookupClass typeString = do
   (_, classEnvironment) <- ask
   return $ typeString `M.lookup` classEnvironment
+
+invokeClassName :: (String -> SemanticAnalyzer a) -> SemanticAnalyzer a
+invokeClassName f = do
+  (currentClassName, _) <- ask
+  f currentClassName

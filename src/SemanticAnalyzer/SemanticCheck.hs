@@ -8,7 +8,8 @@ import qualified Data.Map as M
 
 import qualified Parser.AST as AST
 import qualified Parser.TerminalNode as T
-import SemanticAnalyzer.Class (MethodMap, MethodRecord(..), getMethods)
+import SemanticAnalyzer.Class
+       (MethodMap, MethodRecord(..), getMethods)
 import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
        (ExpressionT(..), LetBindingT(..), computeType)
@@ -65,10 +66,11 @@ semanticCheck (AST.LetExpr (AST.LetBinding newVariable newVariableTypeName maybe
 semanticCheck AST.SelfVarExpr = return SelfVarExprT
 semanticCheck (AST.MethodDispatch callerExpression calleeName calleeParameters) = do
   callerExpressionT <- semanticCheck callerExpression
-  maybeM
-    (tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName)
-    (\classRecord -> checkCallee calleeName callerExpressionT (getMethods classRecord) calleeParameters)
-    (lookupClass "Foo")
+  invokeClassName $ \currentClassName ->
+    maybeM
+      (tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName)
+      (\classRecord -> checkCallee calleeName callerExpressionT (getMethods classRecord) calleeParameters)
+      (lookupClass currentClassName)
 
 errorMethodReturn :: ExpressionT -> T.Identifier -> SemanticAnalyzer ExpressionT
 errorMethodReturn initialExpressionT calleeName =
@@ -80,7 +82,12 @@ checkCallee calleeName callerExpression classMethods methodArguments =
     Nothing -> tell [UndefinedMethod calleeName] >> errorMethodReturn callerExpression calleeName
     Just (MethodRecord _ arguments returnTypeName) -> do
       parametersT <- checkParameters calleeName arguments methodArguments
-      return (MethodDispatchT callerExpression calleeName parametersT returnTypeName)
+      returnTypeName' <- coerceType returnTypeName
+      return (MethodDispatchT callerExpression calleeName parametersT returnTypeName')
+
+coerceType :: Type -> SemanticAnalyzer Type
+coerceType SELF_TYPE = invokeClassName $ \typeName' -> return $ TypeName typeName'
+coerceType type'@(TypeName _) = return type'
 
 checkParameters :: String -> [(T.Identifier, Type)] -> [AST.Expression] -> SemanticAnalyzer [ExpressionT]
 checkParameters callMethodName formals expressions =

@@ -9,6 +9,7 @@ module SemanticAnalyzer.SemanticCheckSpec
   ) where
 
 import Parser.ParserUtil (parse)
+import SemanticAnalyzer.Class (ClassRecord(..), MethodRecord(..))
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.SemanticCheck (semanticCheck)
 import SemanticAnalyzer.TypedAST (ExpressionT(..), LetBindingT(..))
@@ -37,7 +38,8 @@ spec =
       it "should throw an error when identifier is not in the object environment" $
         testAnalyzer' [] [] "foo" (IdentifierExprT "foo" "Object", [UndeclaredIdentifier "foo"])
     describe "new" $ do
-      it "should annotate a new expression for a regular type" $ testAnalyzer "Foo" classEnvironmentMock [] "new Foo" (NewExprT "Foo" "Foo", [])
+      it "should annotate a new expression for a regular type" $
+        testAnalyzer "Foo" classEnvironmentMock [] "new Foo" (NewExprT "Foo" "Foo", [])
       it "should annotate a new expression for SELF_TYPE" $
         testAnalyzer "Foo" classEnvironmentMock [] "new SELF_TYPE" (NewExprT "SELF_TYPE" "SELF_TYPE", [])
       it "should annotate a new expression for SELF_TYPE" $
@@ -84,34 +86,58 @@ spec =
                 (Just $ StringExprT "Hello World")
                 (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5))
             , [MismatchDeclarationType "String" "Int"])
+--        it "should be able to use SELF_TYPE" $
+--          testAnalyzer
+--            "Foo"
+--            classEnvironmentMock
+--            []
+--            "let x: SELF_TYPE in x.call8() + 5"
+--            ( LetExprT $
+--              LetBindingT
+--                "x"
+--                "SELF_TYPE"
+--                Nothing
+--                (PlusExprT (MethodDispatchT (IdentifierExprT "x" "Int") "call8" [] "Int") (IntegerExprT 5))
+--            , [])
     describe "method dispatch" $ do
       it "should throw an error if a method could not be found for a class" $
-        testAnalyzer'
+        testAnalyzer
+          "Foo"
           classEnvironmentMock
           []
           "foo()"
           (MethodDispatchT SelfVarExprT "foo" [] "Object", [UndefinedMethod "foo"])
       it "should throw an error if the caller expression returns an undefined class" $
-        testAnalyzer'
+        testAnalyzer
+          "Foo"
           []
           ["baz" =: "Baz"]
           "baz.foo()"
           (MethodDispatchT (IdentifierExprT "baz" "Baz") "foo" [] "Object", [DispatchUndefinedClass "Baz"])
       it "should parse if it can call a valid method in a valid class with no parameters" $
-        testAnalyzer' classEnvironmentMock [] "call8()" (MethodDispatchT SelfVarExprT "call8" [] "Int", [])
+        testAnalyzer "Foo" classEnvironmentMock [] "call8()" (MethodDispatchT SelfVarExprT "call8" [] "Int", [])
       it "should throw an error if the number of parameters do not match" $
-        testAnalyzer'
+        testAnalyzer
+          "Foo"
           classEnvironmentMock
           []
           "call8(8)"
           (MethodDispatchT SelfVarExprT "call8" [IntegerExprT 8] "Int", [WrongNumberParameters "call8"])
       it "should throw an error if the a parameter is not a subtype of it's argument" $
-        testAnalyzer'
+        testAnalyzer
+          "Foo"
           classEnvironmentMock
           []
           "sum(\"string\", 2)"
           ( MethodDispatchT SelfVarExprT "sum" [StringExprT "string", IntegerExprT 2] "Int"
           , [WrongParameterType "sum" "a" "Int" "String"])
+      it "should return have the return type of a method that returns SELF_TYPE be the class it represents" $
+        testAnalyzer
+          "Foo"
+          ["Foo" =: ClassRecord "Foo" ObjectClass ["callSelf" =: MethodRecord "callSelf" [] "SELF_TYPE"] []]
+          []
+          "callSelf()"
+          (MethodDispatchT SelfVarExprT "callSelf" [] "Foo", [])
   where
     testAnalyzer currentClassName classEnvironment objectEnvironment sourceCode result =
       applyParameters currentClassName classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe`
