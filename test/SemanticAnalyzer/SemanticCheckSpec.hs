@@ -138,6 +138,23 @@ spec =
           []
           "callSelf()"
           (MethodDispatchT SelfVarExprT "callSelf" [] "Foo", [])
+    describe "static method dispatch" $ do
+      it "should throw an error when a class refers to undefined method" $
+        testAnalyzer
+          "Bar"
+          classEnvironmentMock
+          ["x" =: "Bar"]
+          "x@X.call8()"
+          (StaticMethodDispatchT (IdentifierExprT "x" "Bar") "X" "call8" [] "Object", [UndefinedStaticDispatch "X"])
+      it "should throw an error when a class refers to method" $
+        testAnalyzer
+          "Bar"
+          classEnvironmentMock
+          ["x" =: "Bar"]
+          "x@Quux.call8()"
+          (StaticMethodDispatchT (IdentifierExprT "x" "Bar") "Quux" "call8" [] "Object", [WrongStaticDispatch "Quux"])
+
+
   where
     testAnalyzer currentClassName classEnvironment objectEnvironment sourceCode result =
       applyParameters currentClassName classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe`

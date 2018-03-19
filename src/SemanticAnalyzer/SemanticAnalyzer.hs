@@ -25,6 +25,8 @@ data SemanticError
                        , formalType :: Type
                        , expressionType :: Type }
   | UndefinedNewType { typeName :: String }
+  | UndefinedStaticDispatch { undefinedClassName :: String }
+  | WrongStaticDispatch { badAncestorClassName :: String }
   deriving (Show, Eq)
 
 type ObjectEnvironment = M.Map Identifier Type

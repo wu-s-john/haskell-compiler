@@ -15,9 +15,10 @@ import SemanticAnalyzer.TypedAST
        (ExpressionT(..), LetBindingT(..), computeType)
 
 import Control.Monad (unless, zipWithM)
-import Control.Monad.Extra (maybeM)
+import Control.Monad.Extra ((&&^), ifM, maybeM, unlessM)
 import Control.Monad.State (get)
 import Control.Monad.Writer (tell)
+import Data.Maybe (isJust,isNothing)
 import Data.String (fromString)
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.Type (Type(SELF_TYPE, TypeName))
@@ -71,6 +72,13 @@ semanticCheck (AST.MethodDispatch callerExpression calleeName calleeParameters) 
       (tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName)
       (\classRecord -> checkCallee calleeName callerExpressionT (getMethods classRecord) calleeParameters)
       (lookupClass currentClassName)
+semanticCheck (AST.StaticMethodDispatch callerExpression staticType calleeName calleeParameters) = do
+  callerExpressionT <- semanticCheck callerExpression
+  ifM
+    (isNothing <$> lookupClass staticType)
+    (tell [UndefinedStaticDispatch staticType])
+    (tell [WrongStaticDispatch staticType])
+  return $ StaticMethodDispatchT callerExpressionT staticType calleeName [] (TypeName "Object")
 
 errorMethodReturn :: ExpressionT -> T.Identifier -> SemanticAnalyzer ExpressionT
 errorMethodReturn initialExpressionT calleeName =

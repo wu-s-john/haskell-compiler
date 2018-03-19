@@ -21,6 +21,11 @@ data ExpressionT
                     , methodName :: T.Identifier
                     , parameters :: [ExpressionT]
                     , typeVal :: Type }
+  | StaticMethodDispatchT { expr :: ExpressionT
+                           , parentTypeName :: String
+                           , methodName :: T.Identifier
+                           , parameters :: [ExpressionT]
+                           , typeVal :: Type}
   | SelfVarExprT
   | NewExprT { className :: String
              , typeVal :: Type }
