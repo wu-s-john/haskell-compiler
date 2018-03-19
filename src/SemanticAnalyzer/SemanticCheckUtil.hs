@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -73,10 +72,10 @@ instance Categorical Type SemanticAnalyzer where
       ObjectClass -> return (TypeName "Object")
 
 getClassRecord :: Type -> SemanticAnalyzer ClassRecord
-getClassRecord (TypeName currentClassName) =
-  if | currentClassName == "Object" -> return ObjectClass
-     | otherwise ->
-       maybeM (return (ClassRecord currentClassName ObjectClass M.empty M.empty)) return (lookupClass currentClassName)
+getClassRecord (TypeName currentClassName)
+  | currentClassName == "Object" = return ObjectClass
+  | otherwise =
+    maybeM (return (ClassRecord currentClassName ObjectClass M.empty M.empty)) return (lookupClass currentClassName)
 getClassRecord SELF_TYPE = do
   (typeName, _) <- ask
   getClassRecord (TypeName typeName)

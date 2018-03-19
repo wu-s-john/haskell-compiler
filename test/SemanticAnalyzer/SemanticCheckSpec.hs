@@ -160,6 +160,13 @@ spec =
           ["x" =: "Bar"]
           "x@Quux.call8()"
           (StaticMethodDispatchT (IdentifierExprT "x" "Bar") "Quux" "call8" [] "Object", [WrongStaticDispatch "Quux"])
+      it "should parse static dispatch correctly" $
+        testAnalyzer
+          "Quux"
+          classEnvironmentMock
+          ["x" =: "Bar"]
+          "x@Foo.call8()"
+          (StaticMethodDispatchT (IdentifierExprT "x" "Bar") "Foo" "call8" [] "Int", [])
   where
     testAnalyzer currentClassName classEnvironment objectEnvironment sourceCode result =
       applyParameters currentClassName classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe`

@@ -8,14 +8,13 @@ import qualified Data.Map as M
 
 import qualified Parser.AST as AST
 import qualified Parser.TerminalNode as T
-import SemanticAnalyzer.Class
-       (MethodMap, MethodRecord(..), getMethods)
+import SemanticAnalyzer.Class (ClassRecord, MethodRecord(..), getMethods)
 import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
        (ExpressionT(..), LetBindingT(..), computeType)
 
 import Control.Monad (unless, zipWithM)
-import Control.Monad.Extra (ifM, maybeM)
+import Control.Monad.Extra (andM, ifM, maybeM)
 import Control.Monad.State (get)
 import Control.Monad.Writer (tell)
 import Data.Maybe (isNothing)
@@ -68,30 +67,46 @@ semanticCheck AST.SelfVarExpr = return SelfVarExprT
 semanticCheck (AST.MethodDispatch callerExpression calleeName calleeParameters) = do
   callerExpressionT <- semanticCheck callerExpression
   (TypeName expressionTypeName) <- coerceType $ computeType callerExpressionT
-  maybeM
-    (tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName)
-    (\classRecord -> checkCallee calleeName callerExpressionT (getMethods classRecord) calleeParameters)
-    (lookupClass expressionTypeName)
+  checkMethod callerExpressionT expressionTypeName calleeName calleeParameters
 semanticCheck (AST.StaticMethodDispatch callerExpression staticType calleeName calleeParameters) = do
   callerExpressionT <- semanticCheck callerExpression
-  ifM
-    (isNothing <$> lookupClass staticType)
-    (tell [UndefinedStaticDispatch staticType])
-    (tell [WrongStaticDispatch staticType])
-  return $ StaticMethodDispatchT callerExpressionT staticType calleeName [] (TypeName "Object")
+  parametersT <- mapM semanticCheck calleeParameters
+  let staticError = StaticMethodDispatchT callerExpressionT staticType calleeName parametersT (TypeName "Object")
+  isContinuable <-
+    andM
+      [ checkAndReportError (isNothing <$> lookupClass staticType) (tell [UndefinedStaticDispatch staticType])
+      , checkAndReportError
+          (not <$> (computeType callerExpressionT <== fromString staticType))
+          (tell [WrongStaticDispatch staticType])
+      ]
+  if isContinuable
+    then do
+      (MethodDispatchT _ _ _ typeResult) <- checkMethod callerExpressionT staticType calleeName calleeParameters
+      return $ StaticMethodDispatchT callerExpressionT staticType calleeName parametersT typeResult
+    else return staticError
+  where
+    checkAndReportError isError report = ifM isError (report >> return False) (return True)
+
+checkMethod :: ExpressionT -> String -> T.Identifier -> [AST.Expression] -> SemanticAnalyzer ExpressionT
+checkMethod callerExpressionT callerExpressionTypeName calleeName calleeParameters =
+  maybeM
+    (tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName)
+    (\classRecord -> checkCallee calleeName callerExpressionT classRecord calleeParameters)
+    (lookupClass callerExpressionTypeName)
 
 errorMethodReturn :: ExpressionT -> T.Identifier -> SemanticAnalyzer ExpressionT
 errorMethodReturn initialExpressionT calleeName =
   return (MethodDispatchT initialExpressionT calleeName [] (TypeName "Object"))
 
-checkCallee :: T.Identifier -> ExpressionT -> MethodMap -> [AST.Expression] -> SemanticAnalyzer ExpressionT
-checkCallee calleeName callerExpression classMethods methodArguments =
-  case M.lookup calleeName classMethods of
-    Nothing -> tell [UndefinedMethod calleeName] >> errorMethodReturn callerExpression calleeName
-    Just (MethodRecord _ arguments returnTypeName) -> do
-      parametersT <- checkParameters calleeName arguments methodArguments
-      returnTypeName' <- coerceType returnTypeName
-      return (MethodDispatchT callerExpression calleeName parametersT returnTypeName')
+checkCallee :: T.Identifier -> ExpressionT -> ClassRecord -> [AST.Expression] -> SemanticAnalyzer ExpressionT
+checkCallee calleeName callerExpression classRecord methodArguments =
+  let classMethods = getMethods classRecord
+  in case M.lookup calleeName classMethods of
+       Nothing -> tell [UndefinedMethod calleeName] >> errorMethodReturn callerExpression calleeName
+       Just (MethodRecord _ arguments returnTypeName) -> do
+         parametersT <- checkParameters calleeName arguments methodArguments
+         returnTypeName' <- coerceType returnTypeName
+         return (MethodDispatchT callerExpression calleeName parametersT returnTypeName')
 
 coerceType :: Type -> SemanticAnalyzer Type
 coerceType SELF_TYPE = invokeClassName $ \typeName' -> return $ TypeName typeName'
