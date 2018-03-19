@@ -15,10 +15,10 @@ import SemanticAnalyzer.TypedAST
        (ExpressionT(..), LetBindingT(..), computeType)
 
 import Control.Monad (unless, zipWithM)
-import Control.Monad.Extra ((&&^), ifM, maybeM, unlessM)
+import Control.Monad.Extra (ifM, maybeM)
 import Control.Monad.State (get)
 import Control.Monad.Writer (tell)
-import Data.Maybe (isJust,isNothing)
+import Data.Maybe (isNothing)
 import Data.String (fromString)
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.Type (Type(SELF_TYPE, TypeName))
@@ -67,11 +67,11 @@ semanticCheck (AST.LetExpr (AST.LetBinding newVariable newVariableTypeName maybe
 semanticCheck AST.SelfVarExpr = return SelfVarExprT
 semanticCheck (AST.MethodDispatch callerExpression calleeName calleeParameters) = do
   callerExpressionT <- semanticCheck callerExpression
-  invokeClassName $ \currentClassName ->
-    maybeM
-      (tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName)
-      (\classRecord -> checkCallee calleeName callerExpressionT (getMethods classRecord) calleeParameters)
-      (lookupClass currentClassName)
+  (TypeName expressionTypeName) <- coerceType $ computeType callerExpressionT
+  maybeM
+    (tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName)
+    (\classRecord -> checkCallee calleeName callerExpressionT (getMethods classRecord) calleeParameters)
+    (lookupClass expressionTypeName)
 semanticCheck (AST.StaticMethodDispatch callerExpression staticType calleeName calleeParameters) = do
   callerExpressionT <- semanticCheck callerExpression
   ifM

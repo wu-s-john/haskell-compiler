@@ -114,6 +114,13 @@ spec =
           ["baz" =: "Baz"]
           "baz.foo()"
           (MethodDispatchT (IdentifierExprT "baz" "Baz") "foo" [] "Object", [DispatchUndefinedClass "Baz"])
+      it "should dispatch correctly when the caller expression type is different from the current class" $
+        testAnalyzer
+          "Quux"
+          classEnvironmentMock
+          ["x" =: "Foo"]
+          "x.call8()"
+          (MethodDispatchT (IdentifierExprT "x" "Foo") "call8" [] "Int", [])
       it "should parse if it can call a valid method in a valid class with no parameters" $
         testAnalyzer "Foo" classEnvironmentMock [] "call8()" (MethodDispatchT SelfVarExprT "call8" [] "Int", [])
       it "should throw an error if the number of parameters do not match" $
@@ -153,8 +160,6 @@ spec =
           ["x" =: "Bar"]
           "x@Quux.call8()"
           (StaticMethodDispatchT (IdentifierExprT "x" "Bar") "Quux" "call8" [] "Object", [WrongStaticDispatch "Quux"])
-
-
   where
     testAnalyzer currentClassName classEnvironment objectEnvironment sourceCode result =
       applyParameters currentClassName classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe`
