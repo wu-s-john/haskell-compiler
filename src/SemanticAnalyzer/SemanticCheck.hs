@@ -39,11 +39,12 @@ type SemanticAnalyzerM a = MaybeT SemanticAnalyzer a
 
 instance TypeInferrable AST.Feature FeatureT where
   semanticCheck (AST.Method methodString formals returnTypeName expression) = do
-    expressionT <- semanticCheck expression
     reportUndefinedParameterTypes
     reportUndefinedReturnType
-    reportSubtypeError WrongSubtypeMethod methodString (lookupClass' expressionT) maybeReturnTypeClassRecord
-    return $ MethodT methodString formalsT (TypeName returnTypeName) expressionT
+    introduceParameters formalsT $ do
+      expressionT <- semanticCheck expression
+      reportSubtypeError WrongSubtypeMethod methodString (lookupClass' expressionT) maybeReturnTypeClassRecord
+      return $ MethodT methodString formalsT (TypeName returnTypeName) expressionT
     where
       reportUndefinedParameterTypes = mapM_ reportUndefinedParameterType formals
       reportUndefinedParameterType (AST.Formal identifier typeString) =
@@ -71,6 +72,11 @@ instance TypeInferrable AST.Feature FeatureT where
       maybeExpressionTypeClassRecord :: SemanticAnalyzerM ClassRecord
       maybeExpressionTypeClassRecord = lookupClass' maybeExpressionT
       declaredTypeVal = fromString declaredTypeName
+
+introduceParameters :: [FormalT] -> SemanticAnalyzer a -> SemanticAnalyzer a
+introduceParameters [] semanticAnalyzer = semanticAnalyzer
+introduceParameters (FormalT identifierName type':formalTail) semanticAnalyzer =
+  (identifierName, type') /> introduceParameters formalTail semanticAnalyzer
 
 (<==?) :: SemanticAnalyzerM ClassRecord -> SemanticAnalyzerM ClassRecord -> SemanticAnalyzerM Bool
 maybePossibleSubtypeClassRecord <==? maybeAncestorTypeClassRecord = do

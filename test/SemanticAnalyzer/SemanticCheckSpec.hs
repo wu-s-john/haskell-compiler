@@ -81,7 +81,15 @@ spec =
             classEnvironmentMock
             []
             "incorrectSubtype() : String {8}"
-            (MethodT "incorrectSubtype" [] "String" (IntegerExprT 8), [WrongSubtypeMethod "incorrectSubtype" "Int" "String"])
+            ( MethodT "incorrectSubtype" [] "String" (IntegerExprT 8)
+            , [WrongSubtypeMethod "incorrectSubtype" "Int" "String"])
+        it "should parse correctly if a parameter is used in an expression" $
+          testAnalyzer
+            "Foo"
+            classEnvironmentMock
+            []
+            "add8(x : Int) : Int { x + 8}"
+            (MethodT "add8" [FormalT "x" "Int"] "Int" (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 8)), [])
     describe "expression" $ do
       describe "binary arithmetic" $ do
         it "should annotate correctly a plus operator" $
