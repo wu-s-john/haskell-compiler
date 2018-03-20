@@ -45,6 +45,7 @@ library
                      , array
                      , monad-loops
                      , extra
+                     , transformers
   default-language:    Haskell2010
 
 executable stanford-compilers
