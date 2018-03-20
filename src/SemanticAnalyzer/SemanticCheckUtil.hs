@@ -8,7 +8,8 @@ module SemanticAnalyzer.SemanticCheckUtil
   , (\/)
   , (/>)
   , (<==?)
-  , lookupClass'
+  , lookupClass
+  , lookupClass''
   , coerceType
   ) where
 
@@ -18,7 +19,7 @@ import qualified Data.Set as S
 
 import SemanticAnalyzer.Class (ClassRecord(..))
 import SemanticAnalyzer.SemanticAnalyzer
-       (SemanticAnalyzer, SemanticAnalyzerM, invokeClassName, lookupClass)
+       (SemanticAnalyzer, SemanticAnalyzerM)
 
 import Control.Monad.Extra (maybeM)
 import Control.Monad.Reader (ask)
@@ -69,22 +70,22 @@ instance Categorical Type SemanticAnalyzer where
       ObjectClass -> return (TypeName "Object")
 
 class FindableClassRecord a where
-  lookupClass' :: a -> MaybeT SemanticAnalyzer ClassRecord
+  lookupClass :: a -> MaybeT SemanticAnalyzer ClassRecord
 
 instance FindableClassRecord String where
-  lookupClass' = MaybeT . lookupClass
+  lookupClass = MaybeT . lookupClass''
 
 instance FindableClassRecord ExpressionT where
-  lookupClass' expressionT =
+  lookupClass expressionT =
     MaybeT $ do
       let typeVal' = computeType expressionT
       typeString <- toString typeVal'
-      lookupClass typeString
+      lookupClass'' typeString
 
 instance FindableClassRecord (MaybeT SemanticAnalyzer ExpressionT) where
-  lookupClass' maybeExpressionT = do
+  lookupClass maybeExpressionT = do
     expressionT <- maybeExpressionT
-    lookupClass' expressionT
+    lookupClass expressionT
 
 (/>) :: (Identifier, Type) -> SemanticAnalyzer a -> SemanticAnalyzer a -- temporarily adds a type to the object environment
 (identifier', typeName') /> semanticAnalyzer = do
@@ -104,7 +105,7 @@ getClassRecord :: Type -> SemanticAnalyzer ClassRecord
 getClassRecord (TypeName currentClassName)
   | currentClassName == "Object" = return ObjectClass
   | otherwise =
-    maybeM (return (ClassRecord currentClassName ObjectClass M.empty M.empty)) return (lookupClass currentClassName)
+    maybeM (return (ClassRecord currentClassName ObjectClass M.empty M.empty)) return (lookupClass'' currentClassName)
 getClassRecord SELF_TYPE = do
   (typeName, _) <- ask
   getClassRecord (TypeName typeName)
@@ -117,3 +118,13 @@ toString :: Type -> SemanticAnalyzer String
 toString type' = do
   (TypeName typeString) <- coerceType type'
   return typeString
+
+invokeClassName :: (String -> SemanticAnalyzer a) -> SemanticAnalyzer a
+invokeClassName f = do
+  (currentClassName, _) <- ask
+  f currentClassName
+
+lookupClass'' :: String -> SemanticAnalyzer (Maybe ClassRecord)
+lookupClass'' typeString = do
+  (_, classEnvironment) <- ask
+  return $ typeString `M.lookup` classEnvironment

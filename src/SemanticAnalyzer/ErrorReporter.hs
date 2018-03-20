@@ -11,9 +11,10 @@ import Data.String (fromString)
 import Parser.TerminalNode (Identifier)
 import SemanticAnalyzer.Class (ClassRecord(ClassRecord))
 import SemanticAnalyzer.SemanticAnalyzer
-       (SemanticAnalyzer, SemanticAnalyzerM, lookupClass)
-import SemanticAnalyzer.SemanticCheckUtil ((<==?))
-import SemanticAnalyzer.SemanticError (MismatchSubtypeReporter, UndefinedTypeReporter)
+       (SemanticAnalyzer, SemanticAnalyzerM)
+import SemanticAnalyzer.SemanticCheckUtil ((<==?), lookupClass'')
+import SemanticAnalyzer.SemanticError
+       (MismatchSubtypeReporter, UndefinedTypeReporter)
 import SemanticAnalyzer.Type (Type(TypeName))
 
 reportSubtypeError ::
@@ -32,4 +33,4 @@ reportSubtypeError reporter name' maybePossibleSubtypeClassRecord maybeAncestorT
 
 reportUndefinedType :: UndefinedTypeReporter -> Identifier -> String -> SemanticAnalyzer ()
 reportUndefinedType reporter identifier typeString =
-  unlessM (isJust <$> lookupClass typeString) $ tell [reporter identifier (TypeName typeString)]
+  unlessM (isJust <$> lookupClass'' typeString) $ tell [reporter identifier (TypeName typeString)]

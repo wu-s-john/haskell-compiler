@@ -41,7 +41,7 @@ instance TypeInferrable AST.Feature FeatureT where
     reportUndefinedReturnType
     introduceParameters formalsT $ do
       expressionT <- semanticCheck expression
-      reportSubtypeError WrongSubtypeMethod methodString (lookupClass' expressionT) maybeReturnTypeClassRecord
+      reportSubtypeError WrongSubtypeMethod methodString (lookupClass expressionT) maybeReturnTypeClassRecord
       return $ MethodT methodString formalsT (TypeName returnTypeName) expressionT
     where
       reportUndefinedParameterTypes = mapM_ reportUndefinedParameterType formals
@@ -50,7 +50,7 @@ instance TypeInferrable AST.Feature FeatureT where
       toFormalT (AST.Formal identifierName typeString) = FormalT identifierName (fromString typeString)
       formalsT = map toFormalT formals
       reportUndefinedReturnType = reportUndefinedType UndefinedReturnType methodString returnTypeName
-      maybeReturnTypeClassRecord = lookupClass' returnTypeName
+      maybeReturnTypeClassRecord = lookupClass returnTypeName
   semanticCheck (AST.Attribute identifierName declaredTypeName maybeExpression) = do
     maybeExpressionT' <- runMaybeT maybeExpressionT
     _ <-
@@ -64,10 +64,10 @@ instance TypeInferrable AST.Feature FeatureT where
     where
       maybeExpressionT :: SemanticAnalyzerM ExpressionT
       maybeExpressionT = MaybeT $ maybe (return Nothing) (fmap Just . semanticCheck) maybeExpression
-      maybeDeclaredTypeClassRecord = lookupClass' declaredTypeName
+      maybeDeclaredTypeClassRecord = lookupClass declaredTypeName
       undefinedDeclareTypeReport = reportUndefinedType AttributeUndefinedDeclareType identifierName declaredTypeName
       maybeExpressionTypeClassRecord :: SemanticAnalyzerM ClassRecord
-      maybeExpressionTypeClassRecord = lookupClass' maybeExpressionT
+      maybeExpressionTypeClassRecord = lookupClass maybeExpressionT
       declaredTypeVal = fromString declaredTypeName
 
 introduceParameters :: [FormalT] -> SemanticAnalyzer a -> SemanticAnalyzer a
@@ -85,7 +85,7 @@ instance TypeInferrable AST.Expression ExpressionT where
         maybeM
           (tell [UndefinedNewType typeString] >> return (NewExprT typeString (TypeName "Object")))
           (\_ -> return $ NewExprT typeString (fromString typeString))
-          (lookupClass typeString)
+          (lookupClass'' typeString)
   semanticCheck (AST.PlusExpr leftExpression rightExpression) = do
     annotatedLeft <- semanticCheck leftExpression
     annotatedRight <- semanticCheck rightExpression
@@ -132,7 +132,7 @@ instance TypeInferrable AST.Expression ExpressionT where
     let staticError = StaticMethodDispatchT callerExpressionT staticType calleeName parametersT (TypeName "Object")
     isContinuable <-
       andM
-        [ checkAndReportError (isNothing <$> lookupClass staticType) (tell [UndefinedStaticDispatch staticType])
+        [ checkAndReportError (isNothing <$> lookupClass'' staticType) (tell [UndefinedStaticDispatch staticType])
         , checkAndReportError
             (not <$> (computeType callerExpressionT <== fromString staticType))
             (tell [WrongStaticDispatch (computeType callerExpressionT) (fromString staticType)])
@@ -150,7 +150,7 @@ checkMethod callerExpressionT callerExpressionTypeName calleeName calleeParamete
   maybeM
     (tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName)
     (\classRecord -> checkCallee calleeName callerExpressionT classRecord calleeParameters)
-    (lookupClass callerExpressionTypeName)
+    (lookupClass'' callerExpressionTypeName)
 
 errorMethodReturn :: ExpressionT -> T.Identifier -> SemanticAnalyzer ExpressionT
 errorMethodReturn initialExpressionT calleeName =
