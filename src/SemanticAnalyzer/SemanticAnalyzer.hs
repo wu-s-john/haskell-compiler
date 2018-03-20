@@ -26,7 +26,13 @@ data SemanticError
                        , expressionType :: Type }
   | UndefinedNewType { typeName :: String }
   | UndefinedStaticDispatch { undefinedClassName :: String }
-  | WrongStaticDispatch { badAncestorClassName :: String }
+  | WrongStaticDispatch { expressionType :: Type
+                        , declaredType :: Type }
+  | AttributeUndefinedDeclareType { attributeName :: Identifier
+                                  , declaredType :: Type }
+  | WrongSubtypeAttribute { attributeName :: Identifier
+                          , expressionType :: Type
+                          , declaredType :: Type }
   deriving (Show, Eq)
 
 type ObjectEnvironment = M.Map Identifier Type

@@ -9,6 +9,12 @@ module SemanticAnalyzer.TypedAST where
 import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Type
 
+data FeatureT = AttributeT
+  { getName :: T.Identifier
+  , getType :: Type
+  , getInitExpr :: Maybe ExpressionT
+  } deriving (Show, Eq)
+
 data ExpressionT
   = IntegerExprT Int
   | PlusExprT { left :: ExpressionT
@@ -22,10 +28,10 @@ data ExpressionT
                     , parameters :: [ExpressionT]
                     , typeVal :: Type }
   | StaticMethodDispatchT { expr :: ExpressionT
-                           , parentTypeName :: String
-                           , methodName :: T.Identifier
-                           , parameters :: [ExpressionT]
-                           , typeVal :: Type}
+                          , parentTypeName :: String
+                          , methodName :: T.Identifier
+                          , parameters :: [ExpressionT]
+                          , typeVal :: Type }
   | SelfVarExprT
   | NewExprT { className :: String
              , typeVal :: Type }
