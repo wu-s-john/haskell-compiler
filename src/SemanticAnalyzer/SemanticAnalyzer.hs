@@ -35,6 +35,8 @@ data SemanticError
                           , declaredType :: Type }
   | UndefinedParameterType { parameterName :: Identifier
                            , formalType :: Type }
+  | UndefinedReturnType { methodName :: Identifier
+                        , returnType :: Type }
   deriving (Show, Eq)
 
 type ObjectEnvironment = M.Map Identifier Type

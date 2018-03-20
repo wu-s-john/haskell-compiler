@@ -48,11 +48,14 @@ maybeValue ?-> justExpression :< nothingExpression = MaybeT $ maybeM nothingExpr
 instance TypeInferrable AST.Feature FeatureT where
   semanticCheck (AST.Method methodString formals returnTypeName expression) = do
     expressionT <- semanticCheck expression
-    reportWrongParameterTypes
+    reportUndefinedParameterTypes
+    reportUndefinedReturnType
     return $ MethodT methodString (map toFormalT formals) (TypeName returnTypeName) (expressionT)
-    where reportWrongParameterTypes = mapM_ ((uncurry reportWrongParameterType) . (\(AST.Formal identifierString typeString) -> (identifierString, typeString))) formals
-          reportWrongParameterType identifier typeString = reportUndefinedType UndefinedParameterType identifier typeString
+    where reportUndefinedParameterTypes = mapM_ reportUndefinedParameterType formals
+          reportUndefinedParameterType (AST.Formal identifier typeString) =
+            reportUndefinedType UndefinedParameterType identifier typeString
           toFormalT (AST.Formal identifierName typeString) = FormalT identifierName (fromString typeString)
+          reportUndefinedReturnType = reportUndefinedType UndefinedReturnType methodString returnTypeName
 
 
   semanticCheck (AST.Attribute identifierName declaredTypeName maybeExpression) = do

@@ -53,9 +53,11 @@ spec =
               (AttributeT "y" "String" (Just (IntegerExprT 5)), [WrongSubtypeAttribute "y" "Int" "String"])
       describe "methods" $ do
         it "should parse a function with no parameters" $
-          testAnalyzer "Foo" [] [] "call8 () :Int {8}" (MethodT "call8" [] "Int" (IntegerExprT 8), [])
+          testAnalyzer "Foo" classEnvironmentMock [] "call8 () :Int {8}" (MethodT "call8" [] "Int" (IntegerExprT 8), [])
         it "should throw an error if a parameter type is undefined" $
-          testAnalyzer "Foo" [] [] "foo (x : Undefined) :Int {8}" (MethodT "foo" [FormalT "x" "Undefined"] "Int" (IntegerExprT 8), [UndefinedParameterType "x" "Undefined"])
+          testAnalyzer "Foo" classEnvironmentMock [] "foo (x : Undefined) :Int {8}" (MethodT "foo" [FormalT "x" "Undefined"] "Int" (IntegerExprT 8), [UndefinedParameterType "x" "Undefined"])
+        it "should not throw an error if return type is not defined" $
+          testAnalyzer "Foo" classEnvironmentMock [] "foo() : Undefined {8}" (MethodT "foo" [] "Undefined" (IntegerExprT 8), [UndefinedReturnType "foo" "Undefined"])
     describe "expression" $ do
       describe "binary arithmetic" $ do
         it "should annotate correctly a plus operator" $
