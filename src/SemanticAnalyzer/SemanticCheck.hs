@@ -27,6 +27,7 @@ import Data.Maybe (isNothing,isJust)
 import Data.String (fromString)
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.Type (Type(SELF_TYPE, TypeName))
+import Control.Monad.Identity (runIdentity)
 
 class TypeInferrable a b | b -> a where
   semanticCheck :: a -> SemanticAnalyzer b
@@ -43,25 +44,24 @@ maybeValue ?-> justExpression :< nothingExpression = MaybeT $ maybeM nothingExpr
 
 instance TypeInferrable AST.Feature FeatureT where
   semanticCheck (AST.Attribute identifierName declaredTypeName maybeExpression) = do
-    maybeInitialExpressionT' <- (runMaybeT maybeInitialExpressionT)
+    maybeExpressionT' <- (runMaybeT maybeExpressionT)
     _ <- runMaybeT reportSubtypeError
     undefinedDeclareTypeReport
-    return $ AttributeT identifierName declaredTypeVal maybeInitialExpressionT'
-    where maybeInitialExpressionT :: MaybeT SemanticAnalyzer ExpressionT
-          maybeInitialExpressionT = maybeExpression ?-> (\expression -> Just <$> semanticCheck expression ) :< return Nothing
+    return $ AttributeT identifierName declaredTypeVal maybeExpressionT'
+    where maybeExpressionT :: MaybeT SemanticAnalyzer ExpressionT
+          maybeExpressionT = maybeExpression ?-> (\expression -> Just <$> semanticCheck expression ) :< return Nothing
           maybeDeclaredTypeClassRecord = MaybeT $ lookupClass declaredTypeName
           undefinedDeclareTypeReport = do
             unlessM (isJust <$> runMaybeT maybeDeclaredTypeClassRecord) $
               tell [AttributeUndefinedDeclareType identifierName declaredTypeVal]
           maybeExpressionType :: MaybeT SemanticAnalyzer Type
-          maybeExpressionType = computeType <$> maybeInitialExpressionT
+          maybeExpressionType = computeType <$> maybeExpressionT
           maybeExpressionTypeClassRecord :: MaybeT SemanticAnalyzer ClassRecord
           maybeExpressionTypeClassRecord = mapMaybeT (maybeM (return Nothing) (toString >=> lookupClass)) maybeExpressionType
           isSubtype = do
-            _ <- maybeDeclaredTypeClassRecord
-            _ <- maybeExpressionTypeClassRecord
-            expressionTypeVal <- maybeExpressionType
-            MaybeT $ Just <$> ((expressionTypeVal <== declaredTypeVal) :: SemanticAnalyzer Bool)
+            declaredTypeClassRecord <- maybeDeclaredTypeClassRecord
+            expressionTypeClassRecord <- maybeExpressionTypeClassRecord
+            return $ runIdentity (expressionTypeClassRecord <== declaredTypeClassRecord)
           reportSubtypeError = do
             expressionTypeVal <- maybeExpressionType
             unlessM isSubtype $ tell [WrongSubtypeAttribute identifierName expressionTypeVal declaredTypeVal]
