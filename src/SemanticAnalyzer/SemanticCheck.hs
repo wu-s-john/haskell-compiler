@@ -16,73 +16,84 @@ import SemanticAnalyzer.Class
        (ClassRecord(..), MethodRecord(..), getMethods)
 import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
-       (ExpressionT(..), FeatureT(..), LetBindingT(..), computeType,FormalT(..))
+       (ExpressionT(..), FeatureT(..), FormalT(..), LetBindingT(..),
+        computeType)
 
-import Control.Monad (unless, zipWithM)
-import Control.Monad.Extra (andM, ifM, maybeM, unlessM, (>=>))
+import Control.Monad (unless, void, zipWithM)
+import Control.Monad.Extra (andM, ifM, maybeM, unlessM)
+import Control.Monad.Identity (runIdentity)
 import Control.Monad.State (get)
+import Control.Monad.Trans.Maybe (MaybeT(..))
 import Control.Monad.Writer (tell)
-import Control.Monad.Trans.Maybe (MaybeT(..), mapMaybeT)
-import Data.Maybe (isNothing,isJust)
+import Data.Maybe (isJust, isNothing)
 import Data.String (fromString)
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.Type (Type(SELF_TYPE, TypeName))
-import Control.Monad.Identity (runIdentity)
 
 class TypeInferrable a b | b -> a where
   semanticCheck :: a -> SemanticAnalyzer b
 
-data Cond a b =
-  (b -> SemanticAnalyzer a) :< SemanticAnalyzer a
-
 type UndefinedTypeReporter = T.Identifier -> Type -> SemanticError
+
 type SemanticAnalyzerM a = MaybeT SemanticAnalyzer a
-
-infixl 0 ?->
-infixl 1 :<
-
--- checks if an expression exists
-(?->) :: Maybe b -> Cond (Maybe a) b -> MaybeT SemanticAnalyzer a
-maybeValue ?-> justExpression :< nothingExpression = MaybeT $ maybeM nothingExpression justExpression (return maybeValue)
 
 instance TypeInferrable AST.Feature FeatureT where
   semanticCheck (AST.Method methodString formals returnTypeName expression) = do
     expressionT <- semanticCheck expression
     reportUndefinedParameterTypes
     reportUndefinedReturnType
-    return $ MethodT methodString (map toFormalT formals) (TypeName returnTypeName) (expressionT)
-    where reportUndefinedParameterTypes = mapM_ reportUndefinedParameterType formals
-          reportUndefinedParameterType (AST.Formal identifier typeString) =
-            reportUndefinedType UndefinedParameterType identifier typeString
-          toFormalT (AST.Formal identifierName typeString) = FormalT identifierName (fromString typeString)
-          reportUndefinedReturnType = reportUndefinedType UndefinedReturnType methodString returnTypeName
-
-
+    reportSubtypeError WrongSubtypeMethod methodString (lookupClass' expressionT) maybeReturnTypeClassRecord
+    return $ MethodT methodString formalsT (TypeName returnTypeName) expressionT
+    where
+      reportUndefinedParameterTypes = mapM_ reportUndefinedParameterType formals
+      reportUndefinedParameterType (AST.Formal identifier typeString) =
+        reportUndefinedType UndefinedParameterType identifier typeString
+      toFormalT (AST.Formal identifierName typeString) = FormalT identifierName (fromString typeString)
+      formalsT = map toFormalT formals
+      reportUndefinedReturnType = reportUndefinedType UndefinedReturnType methodString returnTypeName
+      maybeReturnTypeClassRecord = lookupClass' returnTypeName
   semanticCheck (AST.Attribute identifierName declaredTypeName maybeExpression) = do
-    maybeExpressionT' <- (runMaybeT maybeExpressionT)
-    _ <- runMaybeT reportSubtypeError
+    maybeExpressionT' <- runMaybeT maybeExpressionT
+    _ <-
+      reportSubtypeError
+        WrongSubtypeAttribute
+        identifierName
+        maybeExpressionTypeClassRecord
+        maybeDeclaredTypeClassRecord
     undefinedDeclareTypeReport
     return $ AttributeT identifierName declaredTypeVal maybeExpressionT'
-    where maybeExpressionT :: SemanticAnalyzerM ExpressionT
-          maybeExpressionT = maybeExpression ?-> (\expression -> Just <$> semanticCheck expression ) :< return Nothing
-          maybeDeclaredTypeClassRecord = MaybeT $ lookupClass declaredTypeName
-          undefinedDeclareTypeReport =
-            reportUndefinedType AttributeUndefinedDeclareType identifierName declaredTypeName
-          maybeExpressionType :: SemanticAnalyzerM Type
-          maybeExpressionType = computeType <$> maybeExpressionT
-          maybeExpressionTypeClassRecord :: SemanticAnalyzerM ClassRecord
-          maybeExpressionTypeClassRecord = mapMaybeT (maybeM (return Nothing) (toString >=> lookupClass)) maybeExpressionType
-          isSubtype = do
-            declaredTypeClassRecord <- maybeDeclaredTypeClassRecord
-            expressionTypeClassRecord <- maybeExpressionTypeClassRecord
-            return $ runIdentity (expressionTypeClassRecord <== declaredTypeClassRecord)
-          reportSubtypeError = do
-            expressionTypeVal <- maybeExpressionType
-            unlessM isSubtype $ tell [WrongSubtypeAttribute identifierName expressionTypeVal declaredTypeVal]
-          declaredTypeVal = fromString declaredTypeName
+    where
+      maybeExpressionT :: SemanticAnalyzerM ExpressionT
+      maybeExpressionT =
+        MaybeT $ maybe (return Nothing) (fmap Just . semanticCheck) maybeExpression
+      maybeDeclaredTypeClassRecord = lookupClass' declaredTypeName
+      undefinedDeclareTypeReport = reportUndefinedType AttributeUndefinedDeclareType identifierName declaredTypeName
+      maybeExpressionTypeClassRecord :: SemanticAnalyzerM ClassRecord
+      maybeExpressionTypeClassRecord = lookupClass' maybeExpressionT
+      declaredTypeVal = fromString declaredTypeName
+
+(<==?) :: SemanticAnalyzerM ClassRecord -> SemanticAnalyzerM ClassRecord -> SemanticAnalyzerM Bool
+maybePossibleSubtypeClassRecord <==? maybeAncestorTypeClassRecord = do
+  possibleSubtypeClassRecord <- maybePossibleSubtypeClassRecord
+  ancestorTypeClassRecord <- maybeAncestorTypeClassRecord
+  return $ runIdentity (ancestorTypeClassRecord <== possibleSubtypeClassRecord)
+
+reportSubtypeError ::
+     (T.Identifier -> Type -> Type -> SemanticError)
+  -> T.Identifier
+  -> SemanticAnalyzerM ClassRecord
+  -> SemanticAnalyzerM ClassRecord
+  -> SemanticAnalyzer ()
+reportSubtypeError reporter name' maybePossibleSubtypeClassRecord maybeAncestorTypeClassRecord =
+  void $
+  runMaybeT $ do
+    (ClassRecord possibleSubtypeName _ _ _) <- maybePossibleSubtypeClassRecord
+    (ClassRecord ancestorName _ _ _) <- maybeAncestorTypeClassRecord
+    unlessM (maybePossibleSubtypeClassRecord <==? maybeAncestorTypeClassRecord) $
+      tell [reporter name' (TypeName possibleSubtypeName) (TypeName ancestorName)]
 
 reportUndefinedType :: UndefinedTypeReporter -> T.Identifier -> String -> SemanticAnalyzer ()
-reportUndefinedType reporter identifier typeString = do
+reportUndefinedType reporter identifier typeString =
   unlessM (isJust <$> lookupClass typeString) $ tell [reporter identifier (TypeName typeString)]
 
 instance TypeInferrable AST.Expression ExpressionT where
@@ -117,14 +128,15 @@ instance TypeInferrable AST.Expression ExpressionT where
       evaluatingExpressionT <- semanticCheck evaluatingExpression
       maybeM
         (transformResult Nothing evaluatingExpressionT)
-        (\initialExpression -> do -- todo initial expression should not consider the injected variable
-                    initialExpressionT <- semanticCheck initialExpression
-                    let initialExpressionType = computeType initialExpressionT
-                    unlessM
-                      (initialExpressionType <== newVariableType)
-                      (tell [MismatchDeclarationType initialExpressionType newVariableType])
+        (\initialExpression -- todo initial expression should not consider the injected variable
+          -> do
+           initialExpressionT <- semanticCheck initialExpression
+           let initialExpressionType = computeType initialExpressionT
+           unlessM
+             (initialExpressionType <== newVariableType)
+             (tell [MismatchDeclarationType initialExpressionType newVariableType])
                       -- todo deal with declared type is undefined
-                    transformResult (Just initialExpressionT) evaluatingExpressionT)
+           transformResult (Just initialExpressionT) evaluatingExpressionT)
         (return maybeInitialExpression)
     where
       newVariableType = fromString newVariableTypeName
@@ -144,7 +156,7 @@ instance TypeInferrable AST.Expression ExpressionT where
         [ checkAndReportError (isNothing <$> lookupClass staticType) (tell [UndefinedStaticDispatch staticType])
         , checkAndReportError
             (not <$> (computeType callerExpressionT <== fromString staticType))
-            (tell [WrongStaticDispatch (computeType callerExpressionT) (fromString  staticType)])
+            (tell [WrongStaticDispatch (computeType callerExpressionT) (fromString staticType)])
         ]
     if isContinuable
       then do
@@ -187,13 +199,3 @@ checkParameters callMethodName formals expressions =
       unlessM (actualParameterTypeName <== formalArgumentType) $
         tell [WrongParameterType callMethodName formalArgumentName formalArgumentType actualParameterTypeName]
       return actualParameterExprT
-
-
-coerceType :: Type -> SemanticAnalyzer Type
-coerceType SELF_TYPE = invokeClassName $ \typeName' -> return $ TypeName typeName'
-coerceType type'@(TypeName _) = return type'
-
-toString :: Type -> SemanticAnalyzer String
-toString type' = do
-  (TypeName typeString) <- coerceType type'
-  return typeString

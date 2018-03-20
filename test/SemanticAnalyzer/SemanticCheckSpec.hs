@@ -13,7 +13,7 @@ import SemanticAnalyzer.Class (ClassRecord(..), MethodRecord(..))
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.SemanticCheck (semanticCheck)
 import SemanticAnalyzer.TypedAST
-       (ExpressionT(..), FeatureT(..), LetBindingT(..),FormalT(..))
+       (ExpressionT(..), FeatureT(..), FormalT(..), LetBindingT(..))
 import SemanticAnalyzer.Util
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 import Util
@@ -55,9 +55,33 @@ spec =
         it "should parse a function with no parameters" $
           testAnalyzer "Foo" classEnvironmentMock [] "call8 () :Int {8}" (MethodT "call8" [] "Int" (IntegerExprT 8), [])
         it "should throw an error if a parameter type is undefined" $
-          testAnalyzer "Foo" classEnvironmentMock [] "foo (x : Undefined) :Int {8}" (MethodT "foo" [FormalT "x" "Undefined"] "Int" (IntegerExprT 8), [UndefinedParameterType "x" "Undefined"])
-        it "should not throw an error if return type is not defined" $
-          testAnalyzer "Foo" classEnvironmentMock [] "foo() : Undefined {8}" (MethodT "foo" [] "Undefined" (IntegerExprT 8), [UndefinedReturnType "foo" "Undefined"])
+          testAnalyzer
+            "Foo"
+            classEnvironmentMock
+            []
+            "foo (x : Undefined) :Int {8}"
+            (MethodT "foo" [FormalT "x" "Undefined"] "Int" (IntegerExprT 8), [UndefinedParameterType "x" "Undefined"])
+        it "should throw an error if return type is not defined" $
+          testAnalyzer
+            "Foo"
+            classEnvironmentMock
+            []
+            "foo() : Undefined {8}"
+            (MethodT "foo" [] "Undefined" (IntegerExprT 8), [UndefinedReturnType "foo" "Undefined"])
+        it "should not throw if inferrred expression type is undefined" $
+          testAnalyzer
+            "Foo"
+            classEnvironmentMock
+            ["x" =: "Undefined"]
+            "callMessage() : String {x}"
+            (MethodT "callMessage" [] "String" (IdentifierExprT "x" "Undefined"), [])
+        it "should throw an error if the inferred expression is not a subtype of the return type" $
+          testAnalyzer
+            "Foo"
+            classEnvironmentMock
+            []
+            "incorrectSubtype() : String {8}"
+            (MethodT "incorrectSubtype" [] "String" (IntegerExprT 8), [WrongSubtypeMethod "incorrectSubtype" "Int" "String"])
     describe "expression" $ do
       describe "binary arithmetic" $ do
         it "should annotate correctly a plus operator" $
@@ -195,7 +219,8 @@ spec =
             classEnvironmentMock
             ["x" =: "Bar"]
             "x@Quux.call8()"
-            (StaticMethodDispatchT (IdentifierExprT "x" "Bar") "Quux" "call8" [] "Object", [WrongStaticDispatch "Bar" "Quux"])
+            ( StaticMethodDispatchT (IdentifierExprT "x" "Bar") "Quux" "call8" [] "Object"
+            , [WrongStaticDispatch "Bar" "Quux"])
         it "should parse static dispatch correctly" $
           testAnalyzer
             "Quux"
