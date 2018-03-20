@@ -13,6 +13,7 @@ import SemanticAnalyzer.Class (ClassRecord(..), MethodRecord(..))
 import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
 import SemanticAnalyzer.InitialClassEnvironment
 import SemanticAnalyzer.SemanticAnalyzer
+import SemanticAnalyzer.SemanticError
 import Util
 
 fooClassRecord :: ClassRecord

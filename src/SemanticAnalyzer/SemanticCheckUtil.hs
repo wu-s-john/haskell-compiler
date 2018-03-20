@@ -7,6 +7,7 @@ module SemanticAnalyzer.SemanticCheckUtil
   ( (<==)
   , (\/)
   , (/>)
+  , (<==?)
   , lookupClass'
   , coerceType
   ) where
@@ -17,7 +18,7 @@ import qualified Data.Set as S
 
 import SemanticAnalyzer.Class (ClassRecord(..))
 import SemanticAnalyzer.SemanticAnalyzer
-       (SemanticAnalyzer, lookupClass,invokeClassName)
+       (SemanticAnalyzer, SemanticAnalyzerM, invokeClassName, lookupClass)
 
 import Control.Monad.Extra (maybeM)
 import Control.Monad.Reader (ask)
@@ -26,7 +27,7 @@ import Control.Monad.Trans.Maybe (MaybeT(MaybeT))
 import Parser.TerminalNode (Identifier)
 import SemanticAnalyzer.PrimitiveTypes (primitiveTypes)
 import SemanticAnalyzer.Type (Type(..))
-import SemanticAnalyzer.TypedAST (ExpressionT(..),computeType)
+import SemanticAnalyzer.TypedAST (ExpressionT(..), computeType)
 
 class (Monad m) =>
       Categorical a m where
@@ -74,10 +75,11 @@ instance FindableClassRecord String where
   lookupClass' = MaybeT . lookupClass
 
 instance FindableClassRecord ExpressionT where
-  lookupClass' expressionT = MaybeT $ do
-    let typeVal' = computeType expressionT
-    typeString <- toString typeVal'
-    lookupClass typeString
+  lookupClass' expressionT =
+    MaybeT $ do
+      let typeVal' = computeType expressionT
+      typeString <- toString typeVal'
+      lookupClass typeString
 
 instance FindableClassRecord (MaybeT SemanticAnalyzer ExpressionT) where
   lookupClass' maybeExpressionT = do
@@ -91,6 +93,12 @@ instance FindableClassRecord (MaybeT SemanticAnalyzer ExpressionT) where
   result <- semanticAnalyzer
   put objectEnvironment
   return result
+
+(<==?) :: SemanticAnalyzerM ClassRecord -> SemanticAnalyzerM ClassRecord -> SemanticAnalyzerM Bool
+maybePossibleSubtypeClassRecord <==? maybeAncestorTypeClassRecord = do
+  possibleSubtypeClassRecord <- maybePossibleSubtypeClassRecord
+  ancestorTypeClassRecord <- maybeAncestorTypeClassRecord
+  return $ runIdentity (ancestorTypeClassRecord <== possibleSubtypeClassRecord)
 
 getClassRecord :: Type -> SemanticAnalyzer ClassRecord
 getClassRecord (TypeName currentClassName)

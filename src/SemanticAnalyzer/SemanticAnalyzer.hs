@@ -10,41 +10,12 @@ import Parser.TerminalNode (Identifier)
 import SemanticAnalyzer.Class (ClassRecord)
 import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
 import SemanticAnalyzer.Type (Type(..))
-
-data SemanticError
-  = NonIntArgumentsPlus { left :: Type
-                        , right :: Type }
-  | UndeclaredIdentifier Identifier
-  | MismatchDeclarationType { inferredType :: Type
-                            , declaredType :: Type }
-  | UndefinedMethod { methodName :: Identifier }
-  | DispatchUndefinedClass { className :: Type }
-  | WrongNumberParameters { methodName :: Identifier }
-  | WrongParameterType { methodName :: Identifier
-                       , parameterName :: Identifier
-                       , formalType :: Type
-                       , expressionType :: Type }
-  | UndefinedNewType { typeName :: String }
-  | UndefinedStaticDispatch { undefinedClassName :: String }
-  | WrongStaticDispatch { expressionType :: Type
-                        , declaredType :: Type }
-  | AttributeUndefinedDeclareType { attributeName :: Identifier
-                                  , declaredType :: Type }
-  | WrongSubtypeAttribute { attributeName :: Identifier
-                          , expressionType :: Type
-                          , declaredType :: Type }
-  | UndefinedParameterType { parameterName :: Identifier
-                           , formalType :: Type }
-  | UndefinedReturnType { methodName :: Identifier
-                        , returnType :: Type }
-  | WrongSubtypeMethod { attributeName :: Identifier
-                       , expressionType :: Type
-                       , returnType :: Type }
-  deriving (Show, Eq)
+import SemanticAnalyzer.SemanticError
+import Control.Monad.Trans.Maybe (MaybeT)
 
 type ObjectEnvironment = M.Map Identifier Type
-
 type SemanticAnalyzer = ReaderT (String, ClassEnvironment) (WriterT [SemanticError] (State ObjectEnvironment))
+type SemanticAnalyzerM a = MaybeT SemanticAnalyzer a
 
 lookupClass :: String -> SemanticAnalyzer (Maybe ClassRecord)
 lookupClass typeString = do

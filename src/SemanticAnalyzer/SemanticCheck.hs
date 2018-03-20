@@ -19,23 +19,21 @@ import SemanticAnalyzer.TypedAST
        (ExpressionT(..), FeatureT(..), FormalT(..), LetBindingT(..),
         computeType)
 
-import Control.Monad (unless, void, zipWithM)
+import Control.Monad (unless, zipWithM)
 import Control.Monad.Extra (andM, ifM, maybeM, unlessM)
-import Control.Monad.Identity (runIdentity)
 import Control.Monad.State (get)
 import Control.Monad.Trans.Maybe (MaybeT(..))
 import Control.Monad.Writer (tell)
-import Data.Maybe (isJust, isNothing)
+import Data.Maybe (isNothing)
 import Data.String (fromString)
+import SemanticAnalyzer.ErrorReporter
+       (reportSubtypeError, reportUndefinedType)
 import SemanticAnalyzer.SemanticAnalyzer
+import SemanticAnalyzer.SemanticError (SemanticError(..))
 import SemanticAnalyzer.Type (Type(SELF_TYPE, TypeName))
 
 class TypeInferrable a b | b -> a where
   semanticCheck :: a -> SemanticAnalyzer b
-
-type UndefinedTypeReporter = T.Identifier -> Type -> SemanticError
-
-type SemanticAnalyzerM a = MaybeT SemanticAnalyzer a
 
 instance TypeInferrable AST.Feature FeatureT where
   semanticCheck (AST.Method methodString formals returnTypeName expression) = do
@@ -65,8 +63,7 @@ instance TypeInferrable AST.Feature FeatureT where
     return $ AttributeT identifierName declaredTypeVal maybeExpressionT'
     where
       maybeExpressionT :: SemanticAnalyzerM ExpressionT
-      maybeExpressionT =
-        MaybeT $ maybe (return Nothing) (fmap Just . semanticCheck) maybeExpression
+      maybeExpressionT = MaybeT $ maybe (return Nothing) (fmap Just . semanticCheck) maybeExpression
       maybeDeclaredTypeClassRecord = lookupClass' declaredTypeName
       undefinedDeclareTypeReport = reportUndefinedType AttributeUndefinedDeclareType identifierName declaredTypeName
       maybeExpressionTypeClassRecord :: SemanticAnalyzerM ClassRecord
@@ -77,30 +74,6 @@ introduceParameters :: [FormalT] -> SemanticAnalyzer a -> SemanticAnalyzer a
 introduceParameters [] semanticAnalyzer = semanticAnalyzer
 introduceParameters (FormalT identifierName type':formalTail) semanticAnalyzer =
   (identifierName, type') /> introduceParameters formalTail semanticAnalyzer
-
-(<==?) :: SemanticAnalyzerM ClassRecord -> SemanticAnalyzerM ClassRecord -> SemanticAnalyzerM Bool
-maybePossibleSubtypeClassRecord <==? maybeAncestorTypeClassRecord = do
-  possibleSubtypeClassRecord <- maybePossibleSubtypeClassRecord
-  ancestorTypeClassRecord <- maybeAncestorTypeClassRecord
-  return $ runIdentity (ancestorTypeClassRecord <== possibleSubtypeClassRecord)
-
-reportSubtypeError ::
-     (T.Identifier -> Type -> Type -> SemanticError)
-  -> T.Identifier
-  -> SemanticAnalyzerM ClassRecord
-  -> SemanticAnalyzerM ClassRecord
-  -> SemanticAnalyzer ()
-reportSubtypeError reporter name' maybePossibleSubtypeClassRecord maybeAncestorTypeClassRecord =
-  void $
-  runMaybeT $ do
-    (ClassRecord possibleSubtypeName _ _ _) <- maybePossibleSubtypeClassRecord
-    (ClassRecord ancestorName _ _ _) <- maybeAncestorTypeClassRecord
-    unlessM (maybePossibleSubtypeClassRecord <==? maybeAncestorTypeClassRecord) $
-      tell [reporter name' (TypeName possibleSubtypeName) (TypeName ancestorName)]
-
-reportUndefinedType :: UndefinedTypeReporter -> T.Identifier -> String -> SemanticAnalyzer ()
-reportUndefinedType reporter identifier typeString =
-  unlessM (isJust <$> lookupClass typeString) $ tell [reporter identifier (TypeName typeString)]
 
 instance TypeInferrable AST.Expression ExpressionT where
   semanticCheck (AST.IntegerExpr value) = return (IntegerExprT value)

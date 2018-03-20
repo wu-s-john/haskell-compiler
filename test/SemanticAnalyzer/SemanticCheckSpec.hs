@@ -10,8 +10,8 @@ module SemanticAnalyzer.SemanticCheckSpec
 
 import Parser.ParserUtil (parse)
 import SemanticAnalyzer.Class (ClassRecord(..), MethodRecord(..))
-import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.SemanticCheck (semanticCheck)
+import SemanticAnalyzer.SemanticError
 import SemanticAnalyzer.TypedAST
        (ExpressionT(..), FeatureT(..), FormalT(..), LetBindingT(..))
 import SemanticAnalyzer.Util
