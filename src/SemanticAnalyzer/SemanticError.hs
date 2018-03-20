@@ -9,8 +9,9 @@ data SemanticError
   = NonIntArgumentsPlus { left :: Type
                         , right :: Type }
   | UndeclaredIdentifier Identifier
-  | MismatchDeclarationType { inferredType :: Type
-                            , declaredType :: Type }
+  | WrongSubtypeLet { variableName :: Identifier
+                    , expressionType :: Type
+                    , declaredType :: Type }
   | UndefinedMethod { methodName :: Identifier }
   | DispatchUndefinedClass { className :: Type }
   | WrongNumberParameters { methodName :: Identifier }
@@ -31,10 +32,11 @@ data SemanticError
                            , formalType :: Type }
   | UndefinedReturnType { methodName :: Identifier
                         , returnType :: Type }
-  | WrongSubtypeMethod { attributeName :: Identifier
+  | WrongSubtypeMethod { methodName :: Identifier
                        , expressionType :: Type
                        , returnType :: Type }
   deriving (Show, Eq)
 
 type UndefinedTypeReporter = Identifier -> Type -> SemanticError
+
 type MismatchSubtypeReporter = Identifier -> Type -> Type -> SemanticError

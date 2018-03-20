@@ -113,7 +113,7 @@ instance TypeInferrable AST.Expression ExpressionT where
            let initialExpressionType = computeType initialExpressionT
            unlessM
              (initialExpressionType <== newVariableType)
-             (tell [MismatchDeclarationType initialExpressionType newVariableType])
+             (tell [WrongSubtypeLet newVariable initialExpressionType newVariableType])
                       -- todo deal with declared type is undefined
            transformResult (Just initialExpressionT) evaluatingExpressionT)
         (return maybeInitialExpression)

@@ -153,7 +153,7 @@ spec =
                   "Int"
                   (Just $ StringExprT "Hello World")
                   (PlusExprT (IdentifierExprT "x" "Int") (IntegerExprT 5))
-              , [MismatchDeclarationType "String" "Int"])
+              , [WrongSubtypeLet "x" "String" "Int"])
   --        it "should be able to use SELF_TYPE" $
   --          testAnalyzer
   --            "Foo"
@@ -189,7 +189,7 @@ spec =
             ["x" =: "Foo"]
             "x.call8()"
             (MethodDispatchT (IdentifierExprT "x" "Foo") "call8" [] "Int", [])
-        it "should parse if it can call a valid method in a valid class with no parameters" $
+        it "should parse if it can call a valid method with no parameters from a valid class" $
           testAnalyzer "Foo" classEnvironmentMock [] "call8()" (MethodDispatchT SelfVarExprT "call8" [] "Int", [])
         it "should throw an error if the number of parameters do not match" $
           testAnalyzer
