@@ -9,7 +9,9 @@ data SemanticError
   = NonIntArgumentsPlus { left :: Type
                         , right :: Type }
   | UndeclaredIdentifier Identifier
-  | WrongSubtypeLet { variableName :: Identifier
+  | LetUndefinedDeclareType { letVariableName :: Identifier
+                            , declaredType :: Type }
+  | WrongSubtypeLet { letVariableName :: Identifier
                     , expressionType :: Type
                     , declaredType :: Type }
   | UndefinedMethod { methodName :: Identifier }
@@ -40,3 +42,5 @@ data SemanticError
 type UndefinedTypeReporter = Identifier -> Type -> SemanticError
 
 type MismatchSubtypeReporter = Identifier -> Type -> Type -> SemanticError
+
+type IntroducedVariableReporter = (UndefinedTypeReporter, MismatchSubtypeReporter)

@@ -37,6 +37,7 @@ library
                      , SemanticAnalyzer.Type
                      , SemanticAnalyzer.SemanticError
                      , SemanticAnalyzer.ErrorReporter
+                     , SemanticAnalyzer.VariableIntroduction
                      , Util
 
   build-depends:       base >= 4.7 && < 5

@@ -18,11 +18,11 @@ import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
        (ExpressionT(..), FeatureT(..), FormalT(..), LetBindingT(..),
         computeType)
+import SemanticAnalyzer.VariableIntroduction
 
 import Control.Monad (unless, zipWithM)
 import Control.Monad.Extra (andM, ifM, maybeM, unlessM)
 import Control.Monad.State (get)
-import Control.Monad.Trans.Maybe (MaybeT(..))
 import Control.Monad.Writer (tell)
 import Data.Maybe (isNothing)
 import Data.String (fromString)
@@ -51,24 +51,15 @@ instance TypeInferrable AST.Feature FeatureT where
       formalsT = map toFormalT formals
       reportUndefinedReturnType = reportUndefinedType UndefinedReturnType methodString returnTypeName
       maybeReturnTypeClassRecord = lookupClass returnTypeName
-  semanticCheck (AST.Attribute identifierName declaredTypeName maybeExpression) = do
-    maybeExpressionT' <- runMaybeT maybeExpressionT
-    _ <-
-      reportSubtypeError
-        WrongSubtypeAttribute
-        identifierName
-        maybeExpressionTypeClassRecord
-        maybeDeclaredTypeClassRecord
-    undefinedDeclareTypeReport
-    return $ AttributeT identifierName declaredTypeVal maybeExpressionT'
+  semanticCheck (AST.Attribute identifierName declaredTypeName maybeExpression) =
+    setupVariableIntroductionEnvironment
+      (VariableEnvironmentInput identifierName declaredTypeName maybeExpression reporter)
+      semanticCheck
+      createAttributeT
     where
-      maybeExpressionT :: SemanticAnalyzerM ExpressionT
-      maybeExpressionT = MaybeT $ maybe (return Nothing) (fmap Just . semanticCheck) maybeExpression
-      maybeDeclaredTypeClassRecord = lookupClass declaredTypeName
-      undefinedDeclareTypeReport = reportUndefinedType AttributeUndefinedDeclareType identifierName declaredTypeName
-      maybeExpressionTypeClassRecord :: SemanticAnalyzerM ClassRecord
-      maybeExpressionTypeClassRecord = lookupClass maybeExpressionT
-      declaredTypeVal = fromString declaredTypeName
+      createAttributeT declaredTypeVal maybeExpressionT =
+        return $ AttributeT identifierName declaredTypeVal maybeExpressionT
+      reporter = (AttributeUndefinedDeclareType, WrongSubtypeAttribute)
 
 introduceParameters :: [FormalT] -> SemanticAnalyzer a -> SemanticAnalyzer a
 introduceParameters [] semanticAnalyzer = semanticAnalyzer
@@ -101,26 +92,15 @@ instance TypeInferrable AST.Expression ExpressionT where
       Nothing ->
         tell [UndeclaredIdentifier identifierName] >> return (IdentifierExprT identifierName $ TypeName "Object")
       Just identifierType -> return (IdentifierExprT identifierName identifierType)
-  semanticCheck (AST.LetExpr (AST.LetBinding newVariable newVariableTypeName maybeInitialExpression evaluatingExpression)) --todo look for a way to refactor this more cleanly
-   =
-    (newVariable, newVariableType) /> do
-      evaluatingExpressionT <- semanticCheck evaluatingExpression
-      maybeM
-        (transformResult Nothing evaluatingExpressionT)
-        (\initialExpression -- todo initial expression should not consider the injected variable
-          -> do
-           initialExpressionT <- semanticCheck initialExpression
-           let initialExpressionType = computeType initialExpressionT
-           unlessM
-             (initialExpressionType <== newVariableType)
-             (tell [WrongSubtypeLet newVariable initialExpressionType newVariableType])
-                      -- todo deal with declared type is undefined
-           transformResult (Just initialExpressionT) evaluatingExpressionT)
-        (return maybeInitialExpression)
+  semanticCheck (AST.LetExpr (AST.LetBinding newVariable declaredTypeName maybeExpression evaluatingExpression)) =
+    setupVariableIntroductionEnvironment input semanticCheck invokeLetExprT
     where
-      newVariableType = fromString newVariableTypeName
-      transformResult initialMaybeExpression evaluatingExpressionT =
-        return $ LetExprT $ LetBindingT newVariable newVariableType initialMaybeExpression evaluatingExpressionT
+      input = VariableEnvironmentInput newVariable declaredTypeName maybeExpression reporter
+      reporter = (LetUndefinedDeclareType, WrongSubtypeLet)
+      invokeLetExprT declaredTypeVal maybeExpressionT =
+        (newVariable, declaredTypeVal) /> do
+          evaluatingExpressionT <- semanticCheck evaluatingExpression
+          return $ LetExprT $ LetBindingT newVariable declaredTypeVal maybeExpressionT evaluatingExpressionT
   semanticCheck AST.SelfVarExpr = return SelfVarExprT
   semanticCheck (AST.MethodDispatch callerExpression calleeName calleeParameters) = do
     callerExpressionT <- semanticCheck callerExpression

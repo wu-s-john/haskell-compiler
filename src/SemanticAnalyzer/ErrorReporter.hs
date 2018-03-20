@@ -17,6 +17,7 @@ import SemanticAnalyzer.SemanticError
        (MismatchSubtypeReporter, UndefinedTypeReporter)
 import SemanticAnalyzer.Type (Type(TypeName))
 
+-- todo refactor these so that the output is SemanticAnalyzerM
 reportSubtypeError ::
      MismatchSubtypeReporter
   -> Identifier

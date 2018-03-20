@@ -141,6 +141,18 @@ spec =
                 ["x" =: "String"]
                 "let x : Int <- 4 in x"
                 (LetExprT $ LetBindingT "x" "Int" (Just $ IntegerExprT 4) (IdentifierExprT "x" "Int"), [])
+            it "should throw an error if the declared type of a variable is not defined" $
+              testAnalyzer'
+                classEnvironmentMock
+                []
+                "let x : Undefined <- 4 in x"
+                (LetExprT $ LetBindingT "x" "Undefined" (Just $ IntegerExprT 4) (IdentifierExprT "x" "Undefined"), [LetUndefinedDeclareType "x" "Undefined"])
+            it "should throw an error if the expression is using the the initialized identifier and that identifier is not called yet" $
+              testAnalyzer'
+                classEnvironmentMock
+                []
+                "let x : Int <- x in x"
+                (LetExprT $ LetBindingT "x" "Int" (Just $ IdentifierExprT "x" "Object") (IdentifierExprT "x" "Int"), [UndeclaredIdentifier "x"])
           describe "expression is not a subtype of it's declared variable" $
             it "declared variable is still follows it's typing" $
             testAnalyzer'
