@@ -6,13 +6,23 @@
 
 module SemanticAnalyzer.TypedAST where
 
+import qualified Parser.AST as AST
 import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Type
 
-data FeatureT = AttributeT
-  { getName :: T.Identifier
+data FeatureT
+  = MethodT { getName :: T.Identifier
+            , getFormals :: [FormalT]
+            , getReturnType :: Type
+            , getExpr :: ExpressionT }
+  | AttributeT { getName :: T.Identifier
+               , getType :: Type
+               , getInitExpr :: Maybe ExpressionT }
+  deriving (Show, Eq)
+
+data FormalT = FormalT
+  { getIdentifier :: T.Identifier
   , getType :: Type
-  , getInitExpr :: Maybe ExpressionT
   } deriving (Show, Eq)
 
 data ExpressionT

@@ -13,7 +13,7 @@ import SemanticAnalyzer.Class (ClassRecord(..), MethodRecord(..))
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.SemanticCheck (semanticCheck)
 import SemanticAnalyzer.TypedAST
-       (ExpressionT(..), FeatureT(..), LetBindingT(..))
+       (ExpressionT(..), FeatureT(..), LetBindingT(..),FormalT(..))
 import SemanticAnalyzer.Util
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 import Util
@@ -24,7 +24,7 @@ main = hspec spec
 spec :: Spec
 spec =
   describe "Semantic Analysis" $ do
-    describe "features" $
+    describe "features" $ do
       describe "attributes" $ do
         describe "no initial expression" $ do
           it "should parse an attribute" $
@@ -51,6 +51,11 @@ spec =
               []
               "y : String <- 5"
               (AttributeT "y" "String" (Just (IntegerExprT 5)), [WrongSubtypeAttribute "y" "Int" "String"])
+      describe "methods" $ do
+        it "should parse a function with no parameters" $
+          testAnalyzer "Foo" [] [] "call8 () :Int {8}" (MethodT "call8" [] "Int" (IntegerExprT 8), [])
+        it "should throw an error if a parameter type is undefined" $
+          testAnalyzer "Foo" [] [] "foo (x : Undefined) :Int {8}" (MethodT "foo" [FormalT "x" "Undefined"] "Int" (IntegerExprT 8), [UndefinedParameterType "x" "Undefined"])
     describe "expression" $ do
       describe "binary arithmetic" $ do
         it "should annotate correctly a plus operator" $

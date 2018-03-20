@@ -33,6 +33,8 @@ data SemanticError
   | WrongSubtypeAttribute { attributeName :: Identifier
                           , expressionType :: Type
                           , declaredType :: Type }
+  | UndefinedParameterType { parameterName :: Identifier
+                           , formalType :: Type }
   deriving (Show, Eq)
 
 type ObjectEnvironment = M.Map Identifier Type

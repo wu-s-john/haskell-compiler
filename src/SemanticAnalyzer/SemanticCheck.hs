@@ -13,13 +13,13 @@ import qualified Data.Map as M
 import qualified Parser.AST as AST
 import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Class
-       (ClassRecord, MethodRecord(..), getMethods)
+       (ClassRecord(..), MethodRecord(..), getMethods)
 import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
-       (ExpressionT(..), FeatureT(..), LetBindingT(..), computeType)
+       (ExpressionT(..), FeatureT(..), LetBindingT(..), computeType,FormalT(..))
 
 import Control.Monad (unless, zipWithM)
-import Control.Monad.Extra (andM, ifM, maybeM, unlessM, (>=>), (&&^))
+import Control.Monad.Extra (andM, ifM, maybeM, unlessM, (>=>))
 import Control.Monad.State (get)
 import Control.Monad.Writer (tell)
 import Control.Monad.Trans.Maybe (MaybeT(..), mapMaybeT)
@@ -35,6 +35,9 @@ class TypeInferrable a b | b -> a where
 data Cond a b =
   (b -> SemanticAnalyzer a) :< SemanticAnalyzer a
 
+type UndefinedTypeReporter = T.Identifier -> Type -> SemanticError
+type SemanticAnalyzerM a = MaybeT SemanticAnalyzer a
+
 infixl 0 ?->
 infixl 1 :<
 
@@ -43,20 +46,28 @@ infixl 1 :<
 maybeValue ?-> justExpression :< nothingExpression = MaybeT $ maybeM nothingExpression justExpression (return maybeValue)
 
 instance TypeInferrable AST.Feature FeatureT where
+  semanticCheck (AST.Method methodString formals returnTypeName expression) = do
+    expressionT <- semanticCheck expression
+    reportWrongParameterTypes
+    return $ MethodT methodString (map toFormalT formals) (TypeName returnTypeName) (expressionT)
+    where reportWrongParameterTypes = mapM_ ((uncurry reportWrongParameterType) . (\(AST.Formal identifierString typeString) -> (identifierString, typeString))) formals
+          reportWrongParameterType identifier typeString = reportUndefinedType UndefinedParameterType identifier typeString
+          toFormalT (AST.Formal identifierName typeString) = FormalT identifierName (fromString typeString)
+
+
   semanticCheck (AST.Attribute identifierName declaredTypeName maybeExpression) = do
     maybeExpressionT' <- (runMaybeT maybeExpressionT)
     _ <- runMaybeT reportSubtypeError
     undefinedDeclareTypeReport
     return $ AttributeT identifierName declaredTypeVal maybeExpressionT'
-    where maybeExpressionT :: MaybeT SemanticAnalyzer ExpressionT
+    where maybeExpressionT :: SemanticAnalyzerM ExpressionT
           maybeExpressionT = maybeExpression ?-> (\expression -> Just <$> semanticCheck expression ) :< return Nothing
           maybeDeclaredTypeClassRecord = MaybeT $ lookupClass declaredTypeName
-          undefinedDeclareTypeReport = do
-            unlessM (isJust <$> runMaybeT maybeDeclaredTypeClassRecord) $
-              tell [AttributeUndefinedDeclareType identifierName declaredTypeVal]
-          maybeExpressionType :: MaybeT SemanticAnalyzer Type
+          undefinedDeclareTypeReport =
+            reportUndefinedType AttributeUndefinedDeclareType identifierName declaredTypeName
+          maybeExpressionType :: SemanticAnalyzerM Type
           maybeExpressionType = computeType <$> maybeExpressionT
-          maybeExpressionTypeClassRecord :: MaybeT SemanticAnalyzer ClassRecord
+          maybeExpressionTypeClassRecord :: SemanticAnalyzerM ClassRecord
           maybeExpressionTypeClassRecord = mapMaybeT (maybeM (return Nothing) (toString >=> lookupClass)) maybeExpressionType
           isSubtype = do
             declaredTypeClassRecord <- maybeDeclaredTypeClassRecord
@@ -67,6 +78,9 @@ instance TypeInferrable AST.Feature FeatureT where
             unlessM isSubtype $ tell [WrongSubtypeAttribute identifierName expressionTypeVal declaredTypeVal]
           declaredTypeVal = fromString declaredTypeName
 
+reportUndefinedType :: UndefinedTypeReporter -> T.Identifier -> String -> SemanticAnalyzer ()
+reportUndefinedType reporter identifier typeString = do
+  unlessM (isJust <$> lookupClass typeString) $ tell [reporter identifier (TypeName typeString)]
 
 instance TypeInferrable AST.Expression ExpressionT where
   semanticCheck (AST.IntegerExpr value) = return (IntegerExprT value)
@@ -177,6 +191,6 @@ coerceType SELF_TYPE = invokeClassName $ \typeName' -> return $ TypeName typeNam
 coerceType type'@(TypeName _) = return type'
 
 toString :: Type -> SemanticAnalyzer String
-toString typeVal = do
-  (TypeName typeString) <- coerceType typeVal
+toString type' = do
+  (TypeName typeString) <- coerceType type'
   return typeString
