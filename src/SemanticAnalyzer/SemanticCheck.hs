@@ -2,6 +2,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module SemanticAnalyzer.SemanticCheck
   ( semanticCheck
@@ -13,27 +16,44 @@ import qualified Data.Map as M
 import qualified Parser.AST as AST
 import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
-       (ExpressionT(..), FeatureT(..), FormalT(..), LetBindingT(..),
-        computeType)
+       (ClassT(ClassT), ExpressionT(..), FeatureT(..), FormalT(..),
+        LetBindingT(..), computeType)
 import SemanticAnalyzer.VariableIntroduction
 
 import Control.Monad (unless)
 import Control.Monad.Extra ()
+import Control.Monad.Reader (ask)
 import Control.Monad.State (get)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Control.Monad.Writer (tell)
 import Data.String (fromString)
+import qualified SemanticAnalyzer.Class as Class
 import SemanticAnalyzer.ErrorReporter
        (checkSubtype, reportSubtypeError, reportUndefinedType, runMaybe)
 import SemanticAnalyzer.MethodDispatch (checkMethod)
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.SemanticError (SemanticError(..))
 import SemanticAnalyzer.Type (Type(SELF_TYPE, TypeName))
+import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
 
-class TypeInferrable a b | b -> a where
-  semanticCheck :: a -> SemanticAnalyzer b
+class TypeInferrable m a b | b -> m a where
+  semanticCheck :: a -> m b
 
-instance TypeInferrable AST.Feature FeatureT where
+instance TypeInferrable ProgramAnalyzer AST.Class ClassT where
+  semanticCheck (AST.Class className' parentName features) = do
+    classEnvironment <- ask
+    let classRecord = classEnvironment M.! className'
+    let (featuresT, _) = runAnalyzer className' classEnvironment (getObjectEnvironment classRecord) featuresAnalyzer
+    return $ ClassT className' parentName featuresT
+      where
+        featuresAnalyzer = mapM semanticCheck features
+        getObjectEnvironment :: Class.ClassRecord -> ObjectEnvironment
+        getObjectEnvironment Class.ObjectClass = error "program should not have a class named object"
+        getObjectEnvironment (Class.ClassRecord _ _ _ attributeMap) = M.map getType' attributeMap
+          where
+            getType' (Class.AttributeRecord _ typeVal') = typeVal'
+
+instance TypeInferrable SemanticAnalyzer AST.Feature FeatureT where
   semanticCheck (AST.Method methodString formals returnTypeName expression) = do
     _ <- runMaybeT reportUndefinedParameterTypes
     _ <- runMaybeT reportUndefinedReturnType
@@ -66,7 +86,7 @@ introduceParameters [] semanticAnalyzer = semanticAnalyzer
 introduceParameters (FormalT identifierName type':formalTail) semanticAnalyzer =
   (identifierName, type') /> introduceParameters formalTail semanticAnalyzer
 
-instance TypeInferrable AST.Expression ExpressionT where
+instance TypeInferrable SemanticAnalyzer AST.Expression ExpressionT where
   semanticCheck (AST.IntegerExpr value) = return (IntegerExprT value)
   semanticCheck (AST.StringExpr value) = return (StringExprT value)
   semanticCheck (AST.NewExpr typeString) =

@@ -17,9 +17,7 @@ import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Control.Monad.Writer (tell)
 import Data.Maybe (isNothing)
-import SemanticAnalyzer.ErrorReporter
-       (continueComputation, reportSubtypeError, reportUndefinedRecord,
-        reportUndefinedType, runMaybe, runNothing)
+import SemanticAnalyzer.ErrorReporter (continueComputation, reportSubtypeError, reportUndefinedRecord, reportUndefinedType, runMaybe)
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.SemanticError (SemanticError(..))
 import SemanticAnalyzer.Type (Type(TypeName))

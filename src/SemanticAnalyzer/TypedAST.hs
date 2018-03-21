@@ -6,9 +6,14 @@
 
 module SemanticAnalyzer.TypedAST where
 
-import qualified Parser.AST as AST
 import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Type
+
+data ClassT = ClassT
+  { getClassName :: String
+  , getParentClassName :: String
+  , getFeatures :: [FeatureT]
+  } deriving (Show, Eq)
 
 data FeatureT
   = MethodT { getName :: T.Identifier

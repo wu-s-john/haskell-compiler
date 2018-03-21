@@ -8,22 +8,47 @@ module SemanticAnalyzer.SemanticCheckSpec
   , spec
   ) where
 
+import Test.Hspec (Spec, describe, hspec, it, shouldBe)
+
 import Parser.ParserUtil (parse)
 import SemanticAnalyzer.Class (ClassRecord(..), MethodRecord(..))
+import SemanticAnalyzer.SemanticAnalyzerRunner
 import SemanticAnalyzer.SemanticCheck (semanticCheck)
 import SemanticAnalyzer.SemanticError
 import SemanticAnalyzer.TypedAST
-       (ExpressionT(..), FeatureT(..), FormalT(..), LetBindingT(..))
+       (ClassT(ClassT), ExpressionT(..), FeatureT(..), FormalT(..),
+        LetBindingT(..))
 import SemanticAnalyzer.Util
-import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 import Util
 
 main :: IO ()
 main = hspec spec
 
+testDirectory :: FilePath
+testDirectory = "test/SemanticAnalyzer/Files/"
+
+fooT :: ClassT
+fooT =
+  ClassT
+    "Foo"
+    "Object"
+    [ MethodT "call8" [] "Int" (IntegerExprT 8)
+    , MethodT
+        "sum"
+        [FormalT "a" "Int", FormalT "b" "Int"]
+        "Int"
+        (PlusExprT (IdentifierExprT "a" "Int") (IdentifierExprT "b" "Int"))
+    ]
+
 spec :: Spec
 spec =
   describe "Semantic Analysis" $ do
+    describe "class" $ do
+      it "should parse a class with no features" $
+        testProgramAnalyzer classEnvironmentMock "class Foo {}" (ClassT "Foo" "Object" [], [])
+      it "should parse a class with some features" $ do
+        fileContents <- readFile $ testDirectory ++ "Class/Foo.cl"
+        testProgramAnalyzer classEnvironmentMock fileContents (fooT, [])
     describe "features" $ do
       describe "attributes" $ do
         describe "no initial expression" $ do
@@ -146,13 +171,16 @@ spec =
                 classEnvironmentMock
                 []
                 "let x : Undefined <- 4 in x"
-                (LetExprT $ LetBindingT "x" "Undefined" (Just $ IntegerExprT 4) (IdentifierExprT "x" "Undefined"), [LetUndefinedDeclareType "x" "Undefined"])
-            it "should throw an error if the expression is using the the initialized identifier and that identifier is not called yet" $
+                ( LetExprT $ LetBindingT "x" "Undefined" (Just $ IntegerExprT 4) (IdentifierExprT "x" "Undefined")
+                , [LetUndefinedDeclareType "x" "Undefined"])
+            it
+              "should throw an error if the expression is using the the initialized identifier and that identifier is not called yet" $
               testAnalyzer'
                 classEnvironmentMock
                 []
                 "let x : Int <- x in x"
-                (LetExprT $ LetBindingT "x" "Int" (Just $ IdentifierExprT "x" "Object") (IdentifierExprT "x" "Int"), [UndeclaredIdentifier "x"])
+                ( LetExprT $ LetBindingT "x" "Int" (Just $ IdentifierExprT "x" "Object") (IdentifierExprT "x" "Int")
+                , [UndeclaredIdentifier "x"])
           describe "expression is not a subtype of it's declared variable" $
             it "declared variable is still follows it's typing" $
             testAnalyzer'
@@ -250,6 +278,8 @@ spec =
             (StaticMethodDispatchT (IdentifierExprT "x" "Bar") "Foo" "call8" [] "Int", [])
   where
     testAnalyzer currentClassName classEnvironment objectEnvironment sourceCode result =
-      applyParameters currentClassName classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe`
+      runAnalyzer currentClassName classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe`
       result
     testAnalyzer' = testAnalyzer ""
+    testProgramAnalyzer classEnvironment sourceCode result =
+      runProgramAnalyzer classEnvironment (semanticCheck (parse sourceCode)) `shouldBe` result

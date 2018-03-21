@@ -17,6 +17,7 @@ import Test.Hspec
 import SemanticAnalyzer.Class (ClassRecord(..))
 import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
 import SemanticAnalyzer.InitialClassEnvironment
+import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
 import SemanticAnalyzer.SemanticCheckUtil ((/>), (<==), (\/))
 import SemanticAnalyzer.Type (Type)
 import SemanticAnalyzer.Util
@@ -30,7 +31,7 @@ spec =
     describe "/>" $
       it "should set a new variable and is a pplied only to an inner scope" $
       fst $
-      applyParameters "" [] [] $ do
+      runAnalyzer "" [] [] $ do
         _ <- ("x", "Int") /> (get >>= (\objectEnvironment -> return $ "x" `M.member` objectEnvironment `shouldBe` True))
         objectEnvironment <- get
         return $ "x" `M.member` objectEnvironment `shouldBe` False
@@ -89,14 +90,14 @@ spec =
 
 testSubtype :: String -> ClassEnvironment -> Type -> Type -> Bool -> Expectation
 testSubtype currentClass classEnvironment possibleSubType parentType result =
-  fst (applyParameters currentClass classEnvironment [] (possibleSubType <== parentType)) `shouldBe` result
+  fst (runAnalyzer currentClass classEnvironment [] (possibleSubType <== parentType)) `shouldBe` result
 
 testSubtype' :: ClassEnvironment -> Type -> Type -> Bool -> Expectation
 testSubtype' = testSubtype ""
 
 testUpperBound :: String -> ClassEnvironment -> Type -> Type -> Type -> Expectation
 testUpperBound currentClass classEnvironment possibleSubType parentType result =
-  fst (applyParameters currentClass classEnvironment [] (possibleSubType \/ parentType)) `shouldBe` result
+  fst (runAnalyzer currentClass classEnvironment [] (possibleSubType \/ parentType)) `shouldBe` result
 
 testUpperBound' :: ClassEnvironment -> Type -> Type -> Type -> Expectation
 testUpperBound' = testUpperBound ""
