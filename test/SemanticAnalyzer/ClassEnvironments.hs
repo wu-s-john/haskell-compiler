@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module SemanticAnalyzer.Util where
+module SemanticAnalyzer.ClassEnvironments where
 
 import qualified Data.Map as M
 
@@ -28,6 +28,7 @@ classEnvironmentMock =
   , "Quux" =: ClassRecord "Quux" ObjectClass [] []
   ]
 
+classErrorMock :: M.Map String ClassRecord
 classErrorMock =
   initialClassEnvironment `M.union`
   [ "MultipleErrors" =:

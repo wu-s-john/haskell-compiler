@@ -20,7 +20,7 @@ import SemanticAnalyzer.InitialClassEnvironment
 import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
 import SemanticAnalyzer.SemanticCheckUtil ((/>), (<==), (\/))
 import SemanticAnalyzer.Type (Type)
-import SemanticAnalyzer.Util
+import SemanticAnalyzer.ClassEnvironments
 
 main :: IO ()
 main = hspec spec

@@ -17,7 +17,7 @@ import qualified Parser.AST as AST
 import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
        (ClassT(ClassT), ExpressionT(..), FeatureT(..), FormalT(..),
-        LetBindingT(..), computeType)
+        LetBindingT(..), ProgramT(..), computeType)
 import SemanticAnalyzer.VariableIntroduction
 
 import Control.Monad (unless)
@@ -32,27 +32,33 @@ import SemanticAnalyzer.ErrorReporter
        (checkSubtype, reportSubtypeError, reportUndefinedType, runMaybe)
 import SemanticAnalyzer.MethodDispatch (checkMethod)
 import SemanticAnalyzer.SemanticAnalyzer
+import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
 import SemanticAnalyzer.SemanticError (SemanticError(..))
 import SemanticAnalyzer.Type (Type(SELF_TYPE, TypeName))
-import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
 
 class TypeInferrable m a b | b -> m a where
   semanticCheck :: a -> m b
+
+instance TypeInferrable ProgramAnalyzer AST.Program ProgramT where
+  semanticCheck (AST.Program classes) = do
+    classesT <- mapM semanticCheck classes
+    return $ ProgramT classesT
 
 instance TypeInferrable ProgramAnalyzer AST.Class ClassT where
   semanticCheck (AST.Class className' parentName features) = do
     classEnvironment <- ask
     let classRecord = classEnvironment M.! className'
-    let (featuresT, errors) = runAnalyzer className' classEnvironment (getObjectEnvironment classRecord) featuresAnalyzer
+    let (featuresT, errors) =
+          runAnalyzer className' classEnvironment (getObjectEnvironment classRecord) featuresAnalyzer
     tell errors
     return $ ClassT className' parentName featuresT
-      where
-        featuresAnalyzer = mapM semanticCheck features
-        getObjectEnvironment :: Class.ClassRecord -> ObjectEnvironment
-        getObjectEnvironment Class.ObjectClass = error "program should not have a class named object"
-        getObjectEnvironment (Class.ClassRecord _ _ _ attributeMap) = M.map getType' attributeMap
-          where
-            getType' (Class.AttributeRecord _ typeVal') = typeVal'
+    where
+      featuresAnalyzer = mapM semanticCheck features
+      getObjectEnvironment :: Class.ClassRecord -> ObjectEnvironment
+      getObjectEnvironment Class.ObjectClass = error "program should not have a class named object"
+      getObjectEnvironment (Class.ClassRecord _ _ _ attributeMap) = M.map getType' attributeMap
+        where
+          getType' (Class.AttributeRecord _ typeVal') = typeVal'
 
 instance TypeInferrable SemanticAnalyzer AST.Feature FeatureT where
   semanticCheck (AST.Method methodString formals returnTypeName expression) = do

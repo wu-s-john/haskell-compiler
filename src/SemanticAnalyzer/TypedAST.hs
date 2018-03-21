@@ -9,6 +9,10 @@ module SemanticAnalyzer.TypedAST where
 import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Type
 
+newtype ProgramT = ProgramT
+  { getClasses :: [ClassT]
+  } deriving (Show, Eq)
+
 data ClassT = ClassT
   { getClassName :: String
   , getParentClassName :: String

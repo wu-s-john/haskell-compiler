@@ -16,8 +16,8 @@ import SemanticAnalyzer.SemanticCheck (semanticCheck)
 import SemanticAnalyzer.SemanticError
 import SemanticAnalyzer.TypedAST
        (ClassT(ClassT), ExpressionT(..), FeatureT(..), FormalT(..),
-        LetBindingT(..))
-import SemanticAnalyzer.Util
+        LetBindingT(..), ProgramT(ProgramT))
+import SemanticAnalyzer.ClassEnvironments
 import Util
 
 main :: IO ()
@@ -48,9 +48,16 @@ multipleErrorsTree =
     , MethodT "add8" [FormalT "b" "Int"] "Int" (PlusExprT (StringExprT "8") (IdentifierExprT "b" "Int"))
     ]
 
+programTree :: ProgramT
+programTree = ProgramT [fooTree, ClassT "Bar" "Foo" [], ClassT "Quux" "Object" []]
+
 spec :: Spec
 spec =
   describe "Semantic Analysis" $ do
+    describe "program" $
+      it "should parse a program with multiple classes" $ do
+        fileContents <- readFile $ testDirectory ++ "Program/Program.cl"
+        testProgramAnalyzer classEnvironmentMock fileContents (programTree, [])
     describe "class" $ do
       it "should parse a class with no features" $
         testProgramAnalyzer classEnvironmentMock "class Foo {}" (ClassT "Foo" "Object" [], [])
