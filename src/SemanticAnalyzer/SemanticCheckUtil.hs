@@ -11,6 +11,7 @@ module SemanticAnalyzer.SemanticCheckUtil
   , lookupClass
   , lookupClass''
   , coerceType
+  , toString
   ) where
 
 import Control.Monad.Identity (Identity, runIdentity)
@@ -25,6 +26,7 @@ import Control.Monad.Extra (maybeM)
 import Control.Monad.Reader (ask)
 import Control.Monad.State (get, put)
 import Control.Monad.Trans.Maybe (MaybeT(MaybeT))
+import Control.Monad.Trans.Class (lift)
 import Parser.TerminalNode (Identifier)
 import SemanticAnalyzer.PrimitiveTypes (primitiveTypes)
 import SemanticAnalyzer.Type (Type(..))
@@ -70,10 +72,15 @@ instance Categorical Type SemanticAnalyzer where
       ObjectClass -> return (TypeName "Object")
 
 class FindableClassRecord a where
-  lookupClass :: a -> MaybeT SemanticAnalyzer ClassRecord
+  lookupClass :: a -> SemanticAnalyzerM ClassRecord
 
 instance FindableClassRecord String where
   lookupClass = MaybeT . lookupClass''
+
+instance FindableClassRecord Type where
+  lookupClass type' = do
+    typeString <- lift $ toString type'
+    lookupClass typeString
 
 instance FindableClassRecord ExpressionT where
   lookupClass expressionT =
@@ -82,7 +89,7 @@ instance FindableClassRecord ExpressionT where
       typeString <- toString typeVal'
       lookupClass'' typeString
 
-instance FindableClassRecord (MaybeT SemanticAnalyzer ExpressionT) where
+instance FindableClassRecord (SemanticAnalyzerM ExpressionT) where
   lookupClass maybeExpressionT = do
     expressionT <- maybeExpressionT
     lookupClass expressionT
@@ -99,7 +106,7 @@ instance FindableClassRecord (MaybeT SemanticAnalyzer ExpressionT) where
 maybePossibleSubtypeClassRecord <==? maybeAncestorTypeClassRecord = do
   possibleSubtypeClassRecord <- maybePossibleSubtypeClassRecord
   ancestorTypeClassRecord <- maybeAncestorTypeClassRecord
-  return $ runIdentity (ancestorTypeClassRecord <== possibleSubtypeClassRecord)
+  return $ runIdentity (possibleSubtypeClassRecord <== ancestorTypeClassRecord)
 
 getClassRecord :: Type -> SemanticAnalyzer ClassRecord
 getClassRecord (TypeName currentClassName)

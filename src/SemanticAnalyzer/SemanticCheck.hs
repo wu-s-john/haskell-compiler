@@ -11,23 +11,21 @@ module SemanticAnalyzer.SemanticCheck
 import qualified Data.Map as M
 
 import qualified Parser.AST as AST
-import qualified Parser.TerminalNode as T
-import SemanticAnalyzer.Class
-       (ClassRecord(..), MethodRecord(..), getMethods)
 import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
        (ExpressionT(..), FeatureT(..), FormalT(..), LetBindingT(..),
         computeType)
 import SemanticAnalyzer.VariableIntroduction
 
-import Control.Monad (unless, zipWithM)
-import Control.Monad.Extra (andM, ifM, maybeM, unlessM)
+import Control.Monad (unless)
+import Control.Monad.Extra ()
 import Control.Monad.State (get)
+import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Control.Monad.Writer (tell)
-import Data.Maybe (isNothing)
 import Data.String (fromString)
 import SemanticAnalyzer.ErrorReporter
-       (reportSubtypeError, reportUndefinedType)
+       (checkSubtype, reportSubtypeError, reportUndefinedType, runMaybe)
+import SemanticAnalyzer.MethodDispatch (checkMethod)
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.SemanticError (SemanticError(..))
 import SemanticAnalyzer.Type (Type(SELF_TYPE, TypeName))
@@ -37,19 +35,21 @@ class TypeInferrable a b | b -> a where
 
 instance TypeInferrable AST.Feature FeatureT where
   semanticCheck (AST.Method methodString formals returnTypeName expression) = do
-    reportUndefinedParameterTypes
-    reportUndefinedReturnType
+    _ <- runMaybeT reportUndefinedParameterTypes
+    _ <- runMaybeT reportUndefinedReturnType
     introduceParameters formalsT $ do
       expressionT <- semanticCheck expression
-      reportSubtypeError WrongSubtypeMethod methodString (lookupClass expressionT) maybeReturnTypeClassRecord
+      _ <-
+        runMaybeT $
+        reportSubtypeError (WrongSubtypeMethod methodString) (lookupClass expressionT) maybeReturnTypeClassRecord
       return $ MethodT methodString formalsT (TypeName returnTypeName) expressionT
     where
       reportUndefinedParameterTypes = mapM_ reportUndefinedParameterType formals
       reportUndefinedParameterType (AST.Formal identifier typeString) =
-        reportUndefinedType UndefinedParameterType identifier typeString
+        reportUndefinedType (UndefinedParameterType identifier) typeString
       toFormalT (AST.Formal identifierName typeString) = FormalT identifierName (fromString typeString)
       formalsT = map toFormalT formals
-      reportUndefinedReturnType = reportUndefinedType UndefinedReturnType methodString returnTypeName
+      reportUndefinedReturnType = reportUndefinedType (UndefinedReturnType methodString) returnTypeName
       maybeReturnTypeClassRecord = lookupClass returnTypeName
   semanticCheck (AST.Attribute identifierName declaredTypeName maybeExpression) =
     setupVariableIntroductionEnvironment
@@ -73,10 +73,10 @@ instance TypeInferrable AST.Expression ExpressionT where
     case fromString typeString of
       SELF_TYPE -> return $ NewExprT typeString SELF_TYPE
       (TypeName _) ->
-        maybeM
+        runMaybe
           (tell [UndefinedNewType typeString] >> return (NewExprT typeString (TypeName "Object")))
           (\_ -> return $ NewExprT typeString (fromString typeString))
-          (lookupClass'' typeString)
+          (lookupClass typeString)
   semanticCheck (AST.PlusExpr leftExpression rightExpression) = do
     annotatedLeft <- semanticCheck leftExpression
     annotatedRight <- semanticCheck rightExpression
@@ -104,57 +104,17 @@ instance TypeInferrable AST.Expression ExpressionT where
   semanticCheck AST.SelfVarExpr = return SelfVarExprT
   semanticCheck (AST.MethodDispatch callerExpression calleeName calleeParameters) = do
     callerExpressionT <- semanticCheck callerExpression
-    (TypeName expressionTypeName) <- coerceType $ computeType callerExpressionT
-    checkMethod callerExpressionT expressionTypeName calleeName calleeParameters
-  semanticCheck (AST.StaticMethodDispatch callerExpression staticType calleeName calleeParameters) = do
+    calleeParametersT <- mapM semanticCheck calleeParameters
+    let callerExpressionType = computeType callerExpressionT
+    inferredReturnType <- checkMethod calleeName callerExpressionType calleeParametersT
+    return (MethodDispatchT callerExpressionT calleeName calleeParametersT inferredReturnType)
+  semanticCheck (AST.StaticMethodDispatch callerExpression staticTypeString calleeName calleeParameters) = do
     callerExpressionT <- semanticCheck callerExpression
-    parametersT <- mapM semanticCheck calleeParameters
-    let staticError = StaticMethodDispatchT callerExpressionT staticType calleeName parametersT (TypeName "Object")
-    isContinuable <-
-      andM
-        [ checkAndReportError (isNothing <$> lookupClass'' staticType) (tell [UndefinedStaticDispatch staticType])
-        , checkAndReportError
-            (not <$> (computeType callerExpressionT <== fromString staticType))
-            (tell [WrongStaticDispatch (computeType callerExpressionT) (fromString staticType)])
-        ]
-    if isContinuable
-      then do
-        (MethodDispatchT _ _ _ typeResult) <- checkMethod callerExpressionT staticType calleeName calleeParameters
-        return $ StaticMethodDispatchT callerExpressionT staticType calleeName parametersT typeResult
-      else return staticError
-    where
-      checkAndReportError isError report = ifM isError (report >> return False) (return True)
-
-checkMethod :: ExpressionT -> String -> T.Identifier -> [AST.Expression] -> SemanticAnalyzer ExpressionT
-checkMethod callerExpressionT callerExpressionTypeName calleeName calleeParameters =
-  maybeM
-    (tell [DispatchUndefinedClass (computeType callerExpressionT)] >> errorMethodReturn callerExpressionT calleeName)
-    (\classRecord -> checkCallee calleeName callerExpressionT classRecord calleeParameters)
-    (lookupClass'' callerExpressionTypeName)
-
-errorMethodReturn :: ExpressionT -> T.Identifier -> SemanticAnalyzer ExpressionT
-errorMethodReturn initialExpressionT calleeName =
-  return (MethodDispatchT initialExpressionT calleeName [] (TypeName "Object"))
-
-checkCallee :: T.Identifier -> ExpressionT -> ClassRecord -> [AST.Expression] -> SemanticAnalyzer ExpressionT
-checkCallee calleeName callerExpression classRecord methodArguments =
-  let classMethods = getMethods classRecord
-  in case M.lookup calleeName classMethods of
-       Nothing -> tell [UndefinedMethod calleeName] >> errorMethodReturn callerExpression calleeName
-       Just (MethodRecord _ arguments returnTypeName) -> do
-         parametersT <- checkParameters calleeName arguments methodArguments
-         returnTypeName' <- coerceType returnTypeName
-         return (MethodDispatchT callerExpression calleeName parametersT returnTypeName')
-
-checkParameters :: String -> [(T.Identifier, Type)] -> [AST.Expression] -> SemanticAnalyzer [ExpressionT]
-checkParameters callMethodName formals expressions =
-  if length formals /= length expressions
-    then tell [WrongNumberParameters callMethodName] >> mapM semanticCheck expressions
-    else zipWithM (uncurry checkParameter) formals expressions
-  where
-    checkParameter formalArgumentName formalArgumentType parameterExpr = do
-      actualParameterExprT <- semanticCheck parameterExpr
-      let actualParameterTypeName = computeType actualParameterExprT
-      unlessM (actualParameterTypeName <== formalArgumentType) $
-        tell [WrongParameterType callMethodName formalArgumentName formalArgumentType actualParameterTypeName]
-      return actualParameterExprT
+    calleeParametersT <- mapM semanticCheck calleeParameters
+    subtypeReport <-
+      runMaybeT $ checkSubtype staticTypeString callerExpressionT (UndefinedStaticDispatch, WrongSubtypeStaticDispatch)
+    inferredReturnType <-
+      case subtypeReport of
+        Nothing -> return (TypeName "Object")
+        Just _ -> checkMethod calleeName (fromString staticTypeString) calleeParametersT
+    return $ StaticMethodDispatchT callerExpressionT staticTypeString calleeName calleeParametersT inferredReturnType

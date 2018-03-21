@@ -22,9 +22,9 @@ data SemanticError
                        , formalType :: Type
                        , expressionType :: Type }
   | UndefinedNewType { typeName :: String }
-  | UndefinedStaticDispatch { undefinedClassName :: String }
-  | WrongStaticDispatch { expressionType :: Type
-                        , declaredType :: Type }
+  | UndefinedStaticDispatch { undefinedClassName :: Type }
+  | WrongSubtypeStaticDispatch { expressionType :: Type
+                               , staticType :: Type }
   | AttributeUndefinedDeclareType { attributeName :: Identifier
                                   , declaredType :: Type }
   | WrongSubtypeAttribute { attributeName :: Identifier
@@ -39,8 +39,10 @@ data SemanticError
                        , returnType :: Type }
   deriving (Show, Eq)
 
-type UndefinedTypeReporter = Identifier -> Type -> SemanticError
+type UndefinedTypeReporter = Type -> SemanticError
 
-type MismatchSubtypeReporter = Identifier -> Type -> Type -> SemanticError
+type MismatchSubtypeReporter = Type -> Type -> SemanticError
 
-type IntroducedVariableReporter = (UndefinedTypeReporter, MismatchSubtypeReporter)
+type IntroducedVariableReporter = (String -> UndefinedTypeReporter, String -> MismatchSubtypeReporter)
+
+type SubtypeReporter = (Type -> SemanticError, Type -> Type -> SemanticError)
