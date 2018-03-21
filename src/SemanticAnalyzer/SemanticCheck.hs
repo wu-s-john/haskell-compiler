@@ -43,7 +43,8 @@ instance TypeInferrable ProgramAnalyzer AST.Class ClassT where
   semanticCheck (AST.Class className' parentName features) = do
     classEnvironment <- ask
     let classRecord = classEnvironment M.! className'
-    let (featuresT, _) = runAnalyzer className' classEnvironment (getObjectEnvironment classRecord) featuresAnalyzer
+    let (featuresT, errors) = runAnalyzer className' classEnvironment (getObjectEnvironment classRecord) featuresAnalyzer
+    tell errors
     return $ ClassT className' parentName featuresT
       where
         featuresAnalyzer = mapM semanticCheck features

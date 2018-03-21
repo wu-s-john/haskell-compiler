@@ -11,7 +11,6 @@ module SemanticAnalyzer.SemanticCheckSpec
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 
 import Parser.ParserUtil (parse)
-import SemanticAnalyzer.Class (ClassRecord(..), MethodRecord(..))
 import SemanticAnalyzer.SemanticAnalyzerRunner
 import SemanticAnalyzer.SemanticCheck (semanticCheck)
 import SemanticAnalyzer.SemanticError
@@ -27,8 +26,8 @@ main = hspec spec
 testDirectory :: FilePath
 testDirectory = "test/SemanticAnalyzer/Files/"
 
-fooT :: ClassT
-fooT =
+fooTree :: ClassT
+fooTree =
   ClassT
     "Foo"
     "Object"
@@ -40,6 +39,15 @@ fooT =
         (PlusExprT (IdentifierExprT "a" "Int") (IdentifierExprT "b" "Int"))
     ]
 
+multipleErrorsTree :: ClassT
+multipleErrorsTree =
+  ClassT
+    "MultipleErrors"
+    "Object"
+    [ AttributeT "eight" "Int" (Just $ StringExprT "8")
+    , MethodT "add8" [FormalT "b" "Int"] "Int" (PlusExprT (StringExprT "8") (IdentifierExprT "b" "Int"))
+    ]
+
 spec :: Spec
 spec =
   describe "Semantic Analysis" $ do
@@ -48,7 +56,13 @@ spec =
         testProgramAnalyzer classEnvironmentMock "class Foo {}" (ClassT "Foo" "Object" [], [])
       it "should parse a class with some features" $ do
         fileContents <- readFile $ testDirectory ++ "Class/Foo.cl"
-        testProgramAnalyzer classEnvironmentMock fileContents (fooT, [])
+        testProgramAnalyzer classEnvironmentMock fileContents (fooTree, [])
+      it "should list all the errors for each class" $ do
+        fileContents <- readFile $ testDirectory ++ "Class/MultipleErrors.cl"
+        testProgramAnalyzer
+          classErrorMock
+          fileContents
+          (multipleErrorsTree, [WrongSubtypeAttribute "eight" "String" "Int", NonIntArgumentsPlus "String" "Int"])
     describe "features" $ do
       describe "attributes" $ do
         describe "no initial expression" $ do
