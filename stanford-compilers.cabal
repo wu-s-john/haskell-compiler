@@ -29,7 +29,7 @@ library
                      , SemanticAnalyzer.ClassEnvironment
                      , SemanticAnalyzer.Class
                      , SemanticAnalyzer.TypedAST
-                     , SemanticAnalyzer.InitialClassEnvironment
+                     , SemanticAnalyzer.ClassEnvironmentUtil
                      , SemanticAnalyzer.SemanticAnalyzer
                      , SemanticAnalyzer.SemanticCheck
                      , SemanticAnalyzer.SemanticCheckUtil

@@ -16,7 +16,7 @@ import Test.Hspec
 
 import SemanticAnalyzer.Class (ClassRecord(..))
 import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
-import SemanticAnalyzer.InitialClassEnvironment
+import SemanticAnalyzer.ClassEnvironmentUtil
 import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
 import SemanticAnalyzer.SemanticCheckUtil ((/>), (<==), (\/))
 import SemanticAnalyzer.Type (Type)

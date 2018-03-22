@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module SemanticAnalyzer.ClassEnvironmentSpec
   ( main
@@ -20,9 +21,11 @@ import SemanticAnalyzer.ClassEnvironment
         mergeMethods)
 
 import Control.Monad.Writer (runWriter)
-import SemanticAnalyzer.Class
-       (AttributeRecord(..), ClassRecord(..), MethodMap, MethodRecord(..))
-import Test.Hspec (Spec, describe, hspec, it, shouldBe)
+import Data.String (fromString)
+import SemanticAnalyzer.Class (ClassRecord(..), toMap)
+import SemanticAnalyzer.ClassEnvironmentUtil (toClassRecord)
+import Test.Hspec
+       (Expectation, Spec, describe, hspec, it, shouldBe)
 
 main :: IO ()
 main = hspec spec
@@ -45,45 +48,34 @@ spec =
         createEnvironment
           [("Bar", "Foo"), ("Foo", "Object")]
           (parse "class Foo {x : X; twice(num: Int): Int {2 * x};}; class Bar inherits Foo {y : Y;};") `shouldBe`
-        [ "Bar" =:
-          ClassRecord "Bar" fooClassRecord fooMethods ["x" =: AttributeRecord "x" "X", "y" =: AttributeRecord "y" "Y"]
-        , "Foo" =: fooClassRecord
-        ]
+        ["Bar" =: toClassRecord "Bar" fooClassRecord fooMethods ["x : X", "y : Y"], "Foo" =: fooClassRecord]
     describe "mergeAttributes" $ do
       it "should not produce errors if a class does not inherit attributes that it's parent has" $
-        testAttribute
-          "Foo"
-          ["x" =: AttributeRecord "x" "X"]
-          ["y" =: AttributeRecord "y" "Y"]
-          (["x" =: AttributeRecord "x" "X", "y" =: AttributeRecord "y" "Y"], [])
+        testAttribute ["x : X"] ["y : Y"] (["x : X", "y : Y"], [])
       it "should produce errors if a class has attributes that it's parent has" $
-        testAttribute
-          "Foo"
-          ["x" =: AttributeRecord "x" "X", "y" =: AttributeRecord "y" "X"]
-          ["y" =: AttributeRecord "y" "Y"]
-          (["x" =: AttributeRecord "x" "X", "y" =: AttributeRecord "y" "X"], [RedefinedAttribute "y" "Foo"])
+        testAttribute ["x : X", "y : X"] ["y : Y"] (["x : X", "y : X"], [RedefinedAttribute "y" (fromString "Foo")])
     describe "mergeMethods" $ do
       it "should not report errors for methods if a class does not inherit methods that it's parent has" $
-        testMethod
-          ["foo" =: MethodRecord "foo" [("x", "X"), ("y", "Y")] "Z"]
-          []
-          (["foo" =: MethodRecord "foo" [("x", "X"), ("y", "Y")] "Z"], [])
+        testMethod ["foo(x : X, y : Y) : Z"] [] (["foo(x : X, y : Y) : Z"], [])
       it "should report errrors for methods if a class does inherit a method with no matching return types" $ -- todo test for inheritance
         testMethod
-          ["foo" =: MethodRecord "foo" [("x", "X")] "Z"]
-          ["foo" =: MethodRecord "foo" [("x", "X")] "Bar"]
-          (["foo" =: MethodRecord "foo" [("x", "X")] "Z"], [DifferentMethodReturnType "Z" "Bar"])
+          ["foo(x : X) : Z"]
+          ["foo(x : X) : Bar"]
+          (["foo(x : X) : Z"], [DifferentMethodReturnType (fromString "Z") (fromString "Bar")])
   where
-    testAttribute className' classAttr parentAttr expectedResult =
-      runWriter (mergeAttributes className' classAttr parentAttr) `shouldBe` expectedResult
-    testMethod classMethods parentMethods expectedResult =
-      runWriter (mergeMethods classMethods parentMethods) `shouldBe` expectedResult
+    testAttribute :: [String] -> [String] -> ([String], [InheritanceErrors]) -> Expectation
+    testAttribute classAttr parentAttr (expectedMapString, errors) =
+      runWriter (mergeAttributes (fromString "Foo") (toMap classAttr) (toMap parentAttr)) `shouldBe`
+      (toMap expectedMapString, errors)
+    testMethod :: [String] -> [String] -> ([String], [InheritanceErrors]) -> Expectation
+    testMethod classStrings parentStrings (expectedMapString, errors) =
+      runWriter (mergeMethods (toMap classStrings) (toMap parentStrings)) `shouldBe` (toMap expectedMapString, errors)
 
 fooFeatures :: T.Identifier -> ClassRecord -> ClassRecord
-fooFeatures name parent' = ClassRecord name parent' fooMethods ["x" =: AttributeRecord "x" "X"]
+fooFeatures name parent' = toClassRecord name parent' fooMethods ["x : X"]
 
-fooMethods :: MethodMap
-fooMethods = ["twice" =: MethodRecord "twice" [("num", "Int")] "Int"]
+fooMethods :: [String]
+fooMethods = ["twice(num : Int) : Int"]
 
 fooClassRecord :: ClassRecord
 fooClassRecord = fooFeatures "Foo" ObjectClass
