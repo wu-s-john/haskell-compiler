@@ -32,7 +32,6 @@ library
                      , SemanticAnalyzer.ClassEnvironmentUtil
                      , SemanticAnalyzer.SemanticAnalyzer
                      , SemanticAnalyzer.SemanticCheck
-                     , SemanticAnalyzer.SemanticCheckUtil
                      , SemanticAnalyzer.PrimitiveTypes
                      , SemanticAnalyzer.Type
                      , SemanticAnalyzer.SemanticError
@@ -40,6 +39,8 @@ library
                      , SemanticAnalyzer.VariableIntroduction
                      , SemanticAnalyzer.MethodDispatch
                      , SemanticAnalyzer.SemanticAnalyzerRunner
+                     , SemanticAnalyzer.Maybe
+                     , SemanticAnalyzer.IsType
                      , Util
 
   build-depends:       base >= 4.7 && < 5

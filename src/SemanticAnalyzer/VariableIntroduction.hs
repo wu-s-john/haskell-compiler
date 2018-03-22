@@ -4,13 +4,13 @@ module SemanticAnalyzer.VariableIntroduction where
 
 import Control.Monad.Trans.Maybe (MaybeT(..))
 
-import Data.String (fromString)
 import qualified Parser.AST as AST
 import SemanticAnalyzer.ErrorReporter (checkSubtypeM)
+import SemanticAnalyzer.IsType (IsType,toType)
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.SemanticError (IntroducedVariableReporter)
-import SemanticAnalyzer.Type (Type)
 import SemanticAnalyzer.TypedAST (ExpressionT(..))
+import SemanticAnalyzer.Type (Type)
 
 data VariableEnvironmentInput =
   VariableEnvironmentInput String
@@ -20,25 +20,27 @@ data VariableEnvironmentInput =
 
 type VariableEnvironment a = Type -> Maybe ExpressionT -> SemanticAnalyzer a
 
-checkIntroducedVariable :: String -> String -> Maybe ExpressionT -> IntroducedVariableReporter -> SemanticAnalyzerM ()
-checkIntroducedVariable identifierName declaredTypeName maybeExpressionT (undefinedTypeReporter, mismatchSubtypeReporter) =
+checkIntroducedVariable ::
+     IsType a
+  => IsType b =>
+       String -> a -> Maybe b -> IntroducedVariableReporter -> SemanticAnalyzerM ()
+checkIntroducedVariable identifierName declaredType maybeExpressionT (undefinedTypeReporter, mismatchSubtypeReporter) =
   checkSubtypeM
-    declaredTypeName
+    declaredType
     maybeExpressionT
     (undefinedTypeReporter identifierName, mismatchSubtypeReporter identifierName)
 
 setupVariableIntroductionEnvironment ::
      VariableEnvironmentInput
   -> (AST.Expression -> SemanticAnalyzer ExpressionT)
-  -> VariableEnvironment a
-  -> SemanticAnalyzer a
-setupVariableIntroductionEnvironment (VariableEnvironmentInput identifierName declaredTypeName maybeExpression reporter) checker setupEnvironment = do
+  -> VariableEnvironment output
+  -> SemanticAnalyzer output
+setupVariableIntroductionEnvironment (VariableEnvironmentInput identifierName declaredType maybeExpression reporter) checker runEnvironment = do
   maybeExpressionT' <- runMaybeT maybeExpressionT
-  _ <- runMaybeT $ checkIntroducedVariable identifierName declaredTypeName maybeExpressionT' reporter
-  setupEnvironment declaredTypeVal maybeExpressionT'
+  _ <- runMaybeT $ checkIntroducedVariable identifierName declaredType maybeExpressionT' reporter
+  runEnvironment (toType declaredType) maybeExpressionT'
   where
     maybeExpressionT = checker >>=? maybeExpression
-    declaredTypeVal = fromString declaredTypeName
 
 (>>=?) :: Monad m => (a -> m b) -> Maybe a -> MaybeT m b
 f >>=? maybeValue = MaybeT $ maybe (return Nothing) (fmap Just . f) maybeValue

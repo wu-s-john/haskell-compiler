@@ -201,7 +201,7 @@ spec =
                 []
                 "let x : Int <- x in x"
                 ( LetExprT $ LetBindingT "x" "Int" (Just $ IdentifierExprT "x" "Object") (IdentifierExprT "x" "Int")
-                , [UndeclaredIdentifier "x"])
+                , [UndeclaredIdentifier "x", WrongSubtypeLet "x" "Object" "Int"])
           describe "expression is not a subtype of it's declared variable" $
             it "declared variable is still follows it's typing" $
             testAnalyzer'

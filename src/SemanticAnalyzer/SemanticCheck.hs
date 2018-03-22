@@ -14,27 +14,28 @@ module SemanticAnalyzer.SemanticCheck
 import qualified Data.Map as M
 
 import qualified Parser.AST as AST
-import SemanticAnalyzer.SemanticCheckUtil
 import SemanticAnalyzer.TypedAST
        (ClassT(ClassT), ExpressionT(..), FeatureT(..), FormalT(..),
-        LetBindingT(..), ProgramT(..), computeType)
+        LetBindingT(..), ProgramT(..))
 import SemanticAnalyzer.VariableIntroduction
 
-import Control.Monad (unless)
-import Control.Monad.Extra ()
+import Control.Monad.Extra ((&&^), unlessM)
 import Control.Monad.Reader (ask)
 import Control.Monad.State (get)
-import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
+import Control.Monad.Trans.Maybe (MaybeT(MaybeT), runMaybeT)
 import Control.Monad.Writer (tell)
 import Data.String (fromString)
 import qualified SemanticAnalyzer.Class as Class
 import SemanticAnalyzer.ErrorReporter
-       (checkSubtype, reportSubtypeError, reportUndefinedType, runMaybe)
+       (checkSubtype, reportSubtypeError, reportUndefined,
+        reportUndefinedType)
+import SemanticAnalyzer.IsType ((/>), (>==<), toType)
+import SemanticAnalyzer.Maybe (runMaybe)
 import SemanticAnalyzer.MethodDispatch (checkMethod)
 import SemanticAnalyzer.SemanticAnalyzer
 import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
 import SemanticAnalyzer.SemanticError (SemanticError(..))
-import SemanticAnalyzer.Type (Type(SELF_TYPE, TypeName))
+import SemanticAnalyzer.Type (Type(TypeName))
 
 class TypeInferrable m a b | b -> m a where
   semanticCheck :: a -> m b
@@ -66,9 +67,7 @@ instance TypeInferrable SemanticAnalyzer AST.Feature FeatureT where
     _ <- runMaybeT reportUndefinedReturnType
     introduceParameters formalsT $ do
       expressionT <- semanticCheck expression
-      _ <-
-        runMaybeT $
-        reportSubtypeError (WrongSubtypeMethod methodString) (lookupClass expressionT) maybeReturnTypeClassRecord
+      _ <- runMaybeT $ reportSubtypeError (WrongSubtypeMethod methodString) expressionT returnTypeName
       return $ MethodT methodString formalsT (TypeName returnTypeName) expressionT
     where
       reportUndefinedParameterTypes = mapM_ reportUndefinedParameterType formals
@@ -77,7 +76,6 @@ instance TypeInferrable SemanticAnalyzer AST.Feature FeatureT where
       toFormalT (AST.Formal identifierName typeString) = FormalT identifierName (fromString typeString)
       formalsT = map toFormalT formals
       reportUndefinedReturnType = reportUndefinedType (UndefinedReturnType methodString) returnTypeName
-      maybeReturnTypeClassRecord = lookupClass returnTypeName
   semanticCheck (AST.Attribute identifierName declaredTypeName maybeExpression) =
     setupVariableIntroductionEnvironment
       (VariableEnvironmentInput identifierName declaredTypeName maybeExpression reporter)
@@ -96,29 +94,27 @@ introduceParameters (FormalT identifierName type':formalTail) semanticAnalyzer =
 instance TypeInferrable SemanticAnalyzer AST.Expression ExpressionT where
   semanticCheck (AST.IntegerExpr value) = return (IntegerExprT value)
   semanticCheck (AST.StringExpr value) = return (StringExprT value)
-  semanticCheck (AST.NewExpr typeString) =
-    case fromString typeString of
-      SELF_TYPE -> return $ NewExprT typeString SELF_TYPE
-      (TypeName _) ->
-        runMaybe
-          (tell [UndefinedNewType typeString] >> return (NewExprT typeString (TypeName "Object")))
-          (\_ -> return $ NewExprT typeString (fromString typeString))
-          (lookupClass typeString)
+  semanticCheck (AST.NewExpr typeString) = do
+    inferredTypeString <- runMaybe "Object" maybeInferredTypeString
+    return $ NewExprT typeString (toType inferredTypeString)
+    where
+      maybeInferredTypeString = do
+        reportUndefinedType UndefinedNewType typeString
+        return typeString
   semanticCheck (AST.PlusExpr leftExpression rightExpression) = do
-    annotatedLeft <- semanticCheck leftExpression
-    annotatedRight <- semanticCheck rightExpression
-    let leftType = computeType annotatedLeft
-    let rightType = computeType annotatedRight
-    unless
-      (computeType annotatedLeft == TypeName "Int" && computeType annotatedRight == TypeName "Int")
-      (tell [NonIntArgumentsPlus leftType rightType])
-    return $ PlusExprT annotatedLeft annotatedRight
+    leftExpressionT <- semanticCheck leftExpression
+    rightExpressionT <- semanticCheck rightExpression
+    let errorMessage = NonIntArgumentsPlus (toType leftExpressionT) (toType rightExpressionT)
+    unlessM ((leftExpressionT >==< "Int") &&^ (rightExpressionT >==< "Int")) (tell [errorMessage])
+    return $ PlusExprT leftExpressionT rightExpressionT
   semanticCheck (AST.IdentifierExpr identifierName) = do
-    objectEnvironment <- get
-    case identifierName `M.lookup` objectEnvironment of
-      Nothing ->
-        tell [UndeclaredIdentifier identifierName] >> return (IdentifierExprT identifierName $ TypeName "Object")
-      Just identifierType -> return (IdentifierExprT identifierName identifierType)
+    identifierType <- runMaybe (toType "Object") maybeIdentifierType
+    _ <- runMaybeT $ reportUndefined maybeIdentifierType $ UndeclaredIdentifier identifierName
+    return (IdentifierExprT identifierName identifierType)
+    where
+      maybeIdentifierType = do
+        objectEnvironment <- get
+        MaybeT $ return $ identifierName `M.lookup` objectEnvironment
   semanticCheck (AST.LetExpr (AST.LetBinding newVariable declaredTypeName maybeExpression evaluatingExpression)) =
     setupVariableIntroductionEnvironment input semanticCheck invokeLetExprT
     where
@@ -132,8 +128,7 @@ instance TypeInferrable SemanticAnalyzer AST.Expression ExpressionT where
   semanticCheck (AST.MethodDispatch callerExpression calleeName calleeParameters) = do
     callerExpressionT <- semanticCheck callerExpression
     calleeParametersT <- mapM semanticCheck calleeParameters
-    let callerExpressionType = computeType callerExpressionT
-    inferredReturnType <- checkMethod calleeName callerExpressionType calleeParametersT
+    inferredReturnType <- checkMethod calleeName callerExpressionT calleeParametersT
     return (MethodDispatchT callerExpressionT calleeName calleeParametersT inferredReturnType)
   semanticCheck (AST.StaticMethodDispatch callerExpression staticTypeString calleeName calleeParameters) = do
     callerExpressionT <- semanticCheck callerExpression
@@ -143,5 +138,5 @@ instance TypeInferrable SemanticAnalyzer AST.Expression ExpressionT where
     inferredReturnType <-
       case subtypeReport of
         Nothing -> return (TypeName "Object")
-        Just _ -> checkMethod calleeName (fromString staticTypeString) calleeParametersT
+        Just _ -> checkMethod calleeName staticTypeString calleeParametersT
     return $ StaticMethodDispatchT callerExpressionT staticTypeString calleeName calleeParametersT inferredReturnType

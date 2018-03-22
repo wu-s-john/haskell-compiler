@@ -21,7 +21,7 @@ data SemanticError
                        , parameterName :: Identifier
                        , formalType :: Type
                        , expressionType :: Type }
-  | UndefinedNewType { typeName :: String }
+  | UndefinedNewType { typeName :: Type }
   | UndefinedStaticDispatch { undefinedClassName :: Type }
   | WrongSubtypeStaticDispatch { expressionType :: Type
                                , staticType :: Type }

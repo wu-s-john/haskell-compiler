@@ -1,9 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module SemanticAnalyzer.SemanticCheckUtilSpec
+module SemanticAnalyzer.IsTypeSpec
   ( main
   , spec
   ) where
@@ -14,13 +13,14 @@ import Control.Monad.State (get)
 import Test.Hspec
        (Expectation, Spec, describe, hspec, it, shouldBe)
 
+import Data.String (fromString)
 import SemanticAnalyzer.Class (ClassRecord(..))
 import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
 import SemanticAnalyzer.ClassEnvironmentUtil
-import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
-import SemanticAnalyzer.SemanticCheckUtil ((/>), (<==), (\/))
-import SemanticAnalyzer.Type (Type)
 import SemanticAnalyzer.ClassEnvironments
+import SemanticAnalyzer.IsType (IsType, (/>), (<==), (\/), toType)
+import SemanticAnalyzer.Maybe (runMaybe)
+import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
 
 main :: IO ()
 main = hspec spec
@@ -88,16 +88,30 @@ spec =
           "should compute the lub of SELF_TYPE and another type to be the lub of the class it represents and that other type" $
           testUpperBound "Foo" classEnvironmentMock "Bar" "SELF_TYPE" "Foo"
 
-testSubtype :: String -> ClassEnvironment -> Type -> Type -> Bool -> Expectation
+testSubtype ::
+     IsType a
+  => IsType b =>
+       String -> ClassEnvironment -> a -> b -> Bool -> Expectation
 testSubtype currentClass classEnvironment possibleSubType parentType result =
-  fst (runAnalyzer currentClass classEnvironment [] (possibleSubType <== parentType)) `shouldBe` result
+  fst (runAnalyzer currentClass classEnvironment [] (runMaybe False (possibleSubType <== parentType))) `shouldBe`
+  result
 
-testSubtype' :: ClassEnvironment -> Type -> Type -> Bool -> Expectation
+testSubtype' ::
+     IsType a
+  => IsType b =>
+       ClassEnvironment -> a -> b -> Bool -> Expectation
 testSubtype' = testSubtype ""
 
-testUpperBound :: String -> ClassEnvironment -> Type -> Type -> Type -> Expectation
+testUpperBound ::
+     IsType a
+  => IsType b =>
+       String -> ClassEnvironment -> a -> b -> String -> Expectation
 testUpperBound currentClass classEnvironment possibleSubType parentType result =
-  fst (runAnalyzer currentClass classEnvironment [] (possibleSubType \/ parentType)) `shouldBe` result
+  toType (fst (runAnalyzer currentClass classEnvironment [] (possibleSubType \/ parentType))) `shouldBe`
+  fromString result
 
-testUpperBound' :: ClassEnvironment -> Type -> Type -> Type -> Expectation
+testUpperBound' ::
+     IsType a
+  => IsType b =>
+       ClassEnvironment -> a -> b -> String -> Expectation
 testUpperBound' = testUpperBound ""
