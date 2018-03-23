@@ -21,10 +21,7 @@ type ClassInheritanceGraph = M.Map T.Type T.Type
 
 type ClassGraphBuilder = Writer [ClassRelationshipError] ClassInheritanceGraph
 
-data GraphCheckerResult
-  = Error [ClassRelationshipError]
-  | Graph ClassInheritanceGraph
-  deriving (Show, Eq)
+type GraphCheckerResult = Either [ClassRelationshipError] ClassInheritanceGraph
 
 data AcyclicClassState = AcyclicClassState
   { getVisitedNodes :: [T.Type]
@@ -108,9 +105,9 @@ checkAndVerifyClassGraph program =
       errors = previouslyDefinedClassErrors ++ checkIllegalInheritance graph
   in case errors of
        [] -> findCyclicErrors graph
-       _ -> Error errors
+       _ -> Left errors
   where
     findCyclicErrors graph =
       case checkAcyclicErrors graph of
-        [] -> Graph graph
-        errors -> Error errors
+        [] -> Right graph
+        errors -> Left errors

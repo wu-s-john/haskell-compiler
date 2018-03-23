@@ -34,7 +34,7 @@ library
                      , SemanticAnalyzer.SemanticCheck
                      , SemanticAnalyzer.PrimitiveTypes
                      , SemanticAnalyzer.Type
-                     , SemanticAnalyzer.SemanticError
+                     , SemanticAnalyzer.TypeCheckError
                      , SemanticAnalyzer.ErrorReporter
                      , SemanticAnalyzer.VariableIntroduction
                      , SemanticAnalyzer.MethodDispatch
@@ -43,6 +43,7 @@ library
                      , SemanticAnalyzer.IsType
                      , SemanticAnalyzer.ClassRelationshipError
                      , SemanticAnalyzer.InheritanceFeatureError
+                     , SemanticAnalyzer.Main
                      , Util
 
   build-depends:       base >= 4.7 && < 5

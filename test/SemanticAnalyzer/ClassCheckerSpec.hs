@@ -96,17 +96,17 @@ spec =
         AcyclicClassState [] ["C", "B", "A"]
     describe "createAndVerifyGraph" $ do
       it "should successfuly build a graph" $
-        (correctTestDirectory ++ "LegalInheritance.cl") `testGraphFile` Graph classGraph
+        (correctTestDirectory ++ "LegalInheritance.cl") `testGraphFile` Right classGraph
       it "should identify UndefinedInheritance/PrimitiveInheritance/PreviouslyDefined errors" $
         (errorTestDirectory ++ "IllegalInheritanceErrors.cl") `testGraphFile`
-        Error
+        Left
           [ PreviouslyDefined "A"
           , PrimitiveInheritance "A" "Bool"
           , UndefinedInheritance "B" "Foo"
           , PrimitiveInheritance "C" "SELF_TYPE"
           ]
       it "should identify UndefinedInheritance/PrimitiveInheritance/PreviouslyDefined errors, but not cyclic errors" $
-        (errorTestDirectory ++ "PrimitiveErrorButNoCycle.cl") `testGraphFile` Error [PrimitiveInheritance "D" "Bool"]
+        (errorTestDirectory ++ "PrimitiveErrorButNoCycle.cl") `testGraphFile` Left [PrimitiveInheritance "D" "Bool"]
   where
     classGraph = M.fromList [("A", "Object"), ("B", "A"), ("C", "B"), ("D", "A")]
 

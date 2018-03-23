@@ -34,7 +34,7 @@ import SemanticAnalyzer.IsType ((/>), (>==<), toType)
 import SemanticAnalyzer.Maybe (runMaybe)
 import SemanticAnalyzer.MethodDispatch (checkMethod)
 import SemanticAnalyzer.SemanticAnalyzer
-import SemanticAnalyzer.SemanticError (SemanticError(..))
+import SemanticAnalyzer.TypeCheckError (TypeCheckError(..))
 import SemanticAnalyzer.Type (Type(TypeName))
 
 class TypeInferrable m a b | b -> m a where

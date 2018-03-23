@@ -6,7 +6,7 @@ import Control.Monad.Reader (runReaderT)
 import Control.Monad.Writer.Lazy (runWriter)
 import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
 import SemanticAnalyzer.SemanticAnalyzer
-import SemanticAnalyzer.SemanticError
+import SemanticAnalyzer.TypeCheckError
 
-runProgramAnalyzer :: ClassEnvironment -> ProgramAnalyzer a -> (a, [SemanticError])
+runProgramAnalyzer :: ClassEnvironment -> ProgramAnalyzer a -> (a, [TypeCheckError])
 runProgramAnalyzer classEnvironment analyzer = runWriter (runReaderT analyzer classEnvironment)

@@ -20,7 +20,7 @@ import SemanticAnalyzer.ErrorReporter
 import SemanticAnalyzer.IsType (IsType, lookupClass)
 import SemanticAnalyzer.Maybe (continueComputation, runMaybe)
 import SemanticAnalyzer.SemanticAnalyzer
-import SemanticAnalyzer.SemanticError (SemanticError(..))
+import SemanticAnalyzer.TypeCheckError (TypeCheckError(..))
 import SemanticAnalyzer.Type (Type(TypeName))
 
 checkMethod ::

@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 
-module SemanticAnalyzer.SemanticError where
+module SemanticAnalyzer.TypeCheckError where
 
 import Parser.TerminalNode (Identifier)
 import SemanticAnalyzer.Type (Type(..))
 
-data SemanticError
+data TypeCheckError
   = NonIntArgumentsPlus { left :: Type
                         , right :: Type }
   | UndeclaredIdentifier Identifier
@@ -39,10 +39,10 @@ data SemanticError
                        , returnType :: Type }
   deriving (Show, Eq)
 
-type UndefinedTypeReporter = Type -> SemanticError
+type UndefinedTypeReporter = Type -> TypeCheckError
 
-type MismatchSubtypeReporter = Type -> Type -> SemanticError
+type MismatchSubtypeReporter = Type -> Type -> TypeCheckError
 
 type IntroducedVariableReporter = (String -> UndefinedTypeReporter, String -> MismatchSubtypeReporter)
 
-type SubtypeReporter = (Type -> SemanticError, Type -> Type -> SemanticError)
+type SubtypeReporter = (Type -> TypeCheckError, Type -> Type -> TypeCheckError)

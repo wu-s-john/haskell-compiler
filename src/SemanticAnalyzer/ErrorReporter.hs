@@ -6,8 +6,8 @@ import Control.Monad.Extra (unlessM, whenJust)
 import Control.Monad.Writer (tell)
 import SemanticAnalyzer.IsType (IsType, (<==), lookupClass, toType)
 import SemanticAnalyzer.SemanticAnalyzer (SemanticAnalyzerM)
-import SemanticAnalyzer.SemanticError
-       (MismatchSubtypeReporter, SemanticError, SubtypeReporter,
+import SemanticAnalyzer.TypeCheckError
+       (MismatchSubtypeReporter, TypeCheckError, SubtypeReporter,
         UndefinedTypeReporter)
 import SemanticAnalyzer.Maybe (killComputation, runNothing)
 
@@ -22,7 +22,7 @@ reportSubtypeError reporter possibleSubtype ancestorType =
 reportUndefinedType :: IsType a => UndefinedTypeReporter -> a -> SemanticAnalyzerM ()
 reportUndefinedType reporter typeVal = reportUndefined (lookupClass typeVal) $ reporter (toType typeVal)
 
-reportUndefined :: SemanticAnalyzerM a -> SemanticError -> SemanticAnalyzerM ()
+reportUndefined :: SemanticAnalyzerM a -> TypeCheckError -> SemanticAnalyzerM ()
 reportUndefined semanticAnalyzer semanticError = runNothing semanticAnalyzer $ tell [semanticError]
 
 checkSubtype ::

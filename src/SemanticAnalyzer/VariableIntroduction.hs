@@ -8,7 +8,7 @@ import qualified Parser.AST as AST
 import SemanticAnalyzer.ErrorReporter (checkSubtypeM)
 import SemanticAnalyzer.IsType (IsType,toType)
 import SemanticAnalyzer.SemanticAnalyzer
-import SemanticAnalyzer.SemanticError (IntroducedVariableReporter)
+import SemanticAnalyzer.TypeCheckError (IntroducedVariableReporter)
 import SemanticAnalyzer.TypedAST (ExpressionT(..))
 import SemanticAnalyzer.Type (Type)
 

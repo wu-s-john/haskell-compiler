@@ -15,7 +15,7 @@ import Parser.ParserUtil (parse)
 import SemanticAnalyzer.ClassEnvironments
 import SemanticAnalyzer.SemanticAnalyzerRunner
 import SemanticAnalyzer.SemanticCheck (semanticCheck)
-import SemanticAnalyzer.SemanticError
+import SemanticAnalyzer.TypeCheckError
 import SemanticAnalyzer.TypedAST
        (ClassT(ClassT), ExpressionT(..), FeatureT(..), FormalT(..),
         LetBindingT(..), ProgramT(ProgramT))
