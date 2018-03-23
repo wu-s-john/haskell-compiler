@@ -10,14 +10,15 @@ module SemanticAnalyzer.SemanticCheckSpec
 
 import Test.Hspec (Spec, describe, hspec, it, shouldBe)
 
+import Control.Monad.RWS.Lazy (evalRWS)
 import Parser.ParserUtil (parse)
+import SemanticAnalyzer.ClassEnvironments
 import SemanticAnalyzer.SemanticAnalyzerRunner
 import SemanticAnalyzer.SemanticCheck (semanticCheck)
 import SemanticAnalyzer.SemanticError
 import SemanticAnalyzer.TypedAST
        (ClassT(ClassT), ExpressionT(..), FeatureT(..), FormalT(..),
         LetBindingT(..), ProgramT(ProgramT))
-import SemanticAnalyzer.ClassEnvironments
 import Util
 
 main :: IO ()
@@ -299,7 +300,7 @@ spec =
             (StaticMethodDispatchT (IdentifierExprT "x" "Bar") "Foo" "call8" [] "Int", [])
   where
     testAnalyzer currentClassName classEnvironment objectEnvironment sourceCode result =
-      runAnalyzer currentClassName classEnvironment objectEnvironment (semanticCheck (parse sourceCode)) `shouldBe`
+      evalRWS (semanticCheck (parse sourceCode)) (currentClassName, classEnvironment) objectEnvironment `shouldBe`
       result
     testAnalyzer' = testAnalyzer ""
     testProgramAnalyzer classEnvironment sourceCode result =

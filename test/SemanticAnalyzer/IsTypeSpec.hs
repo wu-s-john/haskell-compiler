@@ -13,6 +13,7 @@ import Control.Monad.State (get)
 import Test.Hspec
        (Expectation, Spec, describe, hspec, it, shouldBe)
 
+import Control.Monad.RWS.Lazy (evalRWS)
 import Data.String (fromString)
 import SemanticAnalyzer.Class (ClassRecord(..))
 import SemanticAnalyzer.ClassEnvironment (ClassEnvironment)
@@ -20,21 +21,23 @@ import SemanticAnalyzer.ClassEnvironmentUtil
 import SemanticAnalyzer.ClassEnvironments
 import SemanticAnalyzer.IsType (IsType, (/>), (<==), (\/), toType)
 import SemanticAnalyzer.Maybe (runMaybe)
-import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
+import SemanticAnalyzer.SemanticAnalyzer (SemanticAnalyzer)
 
 main :: IO ()
 main = hspec spec
+
+objectEnvironmentComputation :: SemanticAnalyzer (IO ())
+objectEnvironmentComputation = do
+  _ <- ("x", "Int") /> (get >>= (\objectEnvironment -> return $ "x" `M.member` objectEnvironment `shouldBe` True))
+  objectEnvironment <- get
+  return $ "x" `M.member` objectEnvironment `shouldBe` False
 
 spec :: Spec
 spec =
   describe "SemanticCheckUtil" $ do
     describe "/>" $
       it "should set a new variable and is a pplied only to an inner scope" $
-      fst $
-      runAnalyzer "" [] [] $ do
-        _ <- ("x", "Int") /> (get >>= (\objectEnvironment -> return $ "x" `M.member` objectEnvironment `shouldBe` True))
-        objectEnvironment <- get
-        return $ "x" `M.member` objectEnvironment `shouldBe` False
+      fst $ evalRWS objectEnvironmentComputation ("", []) []
     describe "isSubtype" $ do
       it "any class should be a subtype of object" $ testSubtype' classEnvironmentMock "String" "Object" True
       it "should not have a primitive type be a subtype of any class (except for Object)" $
@@ -93,8 +96,7 @@ testSubtype ::
   => IsType b =>
        String -> ClassEnvironment -> a -> b -> Bool -> Expectation
 testSubtype currentClass classEnvironment possibleSubType parentType result =
-  fst (runAnalyzer currentClass classEnvironment [] (runMaybe False (possibleSubType <== parentType))) `shouldBe`
-  result
+  fst (evalRWS (runMaybe False (possibleSubType <== parentType)) (currentClass, classEnvironment) []) `shouldBe` result
 
 testSubtype' ::
      IsType a
@@ -107,7 +109,7 @@ testUpperBound ::
   => IsType b =>
        String -> ClassEnvironment -> a -> b -> String -> Expectation
 testUpperBound currentClass classEnvironment possibleSubType parentType result =
-  toType (fst (runAnalyzer currentClass classEnvironment [] (possibleSubType \/ parentType))) `shouldBe`
+  toType (fst (evalRWS (possibleSubType \/ parentType) (currentClass, classEnvironment) [])) `shouldBe`
   fromString result
 
 testUpperBound' ::

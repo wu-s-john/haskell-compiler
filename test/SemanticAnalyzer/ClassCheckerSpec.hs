@@ -5,9 +5,8 @@ module SemanticAnalyzer.ClassCheckerSpec
   , spec
   ) where
 
-import Control.Monad.Reader (runReaderT)
-import Control.Monad.State (State, evalState, execState)
-import Control.Monad.Writer (runWriter, runWriterT)
+import Control.Monad.RWS.Lazy (evalRWS, execRWS)
+import Control.Monad.Writer (runWriter)
 import qualified Data.Map as M
 import Parser.ParserUtil (parse)
 import Parser.TerminalNode (Type)
@@ -110,10 +109,10 @@ spec =
         (errorTestDirectory ++ "PrimitiveErrorButNoCycle.cl") `testGraphFile` Error [PrimitiveInheritance "D" "Bool"]
   where
     classGraph = M.fromList [("A", "Object"), ("B", "A"), ("C", "B"), ("D", "A")]
+
 --      it "should identify cyclic errors" $
 --        (errorTestDirectory ++ "CyclicInheritance.cl") `testGraphFile`
 --        Error [InheritanceCycle "C", InheritanceCycle "B", InheritanceCycle "A"] --todo fix reporting
-
 --      it "should build an empty graph" $  "" `testGraphVerifier` Graph M.empty
 --      it "should identify cyclic errors"
 testBuilder :: String -> ClassInheritanceGraph -> [ClassRelationshipError] -> Expectation
@@ -128,25 +127,15 @@ toClassInheritanceMap :: String -> ClassGraphBuilder
 toClassInheritanceMap = createClassGraph . parse
 
 testGraphVerifier :: String -> GraphCheckerResult -> Expectation
-testGraphVerifier code expectedResult =
-  checkAndVerifyClassGraph (parse code) `shouldBe` expectedResult
+testGraphVerifier code expectedResult = checkAndVerifyClassGraph (parse code) `shouldBe` expectedResult
 
 testGraphFile :: FilePath -> GraphCheckerResult -> Expectation
 testGraphFile fileName expectedResults = readFile fileName >>= flip testGraphVerifier expectedResults
 
-computeState :: ClassInheritanceGraph -> AcyclicClassChecker a -> State AcyclicClassState a
-computeState classGraph classAnalyzer = fst <$> runWriterT (runReaderT classAnalyzer classGraph)
-
 computeClassAnalyzer :: AcyclicClassChecker a -> ClassInheritanceGraph -> AcyclicClassState
-computeClassAnalyzer classChecker = runAnalyzer execState classChecker (AcyclicClassState [] [])
-
-runAnalyzer ::
-     (State AcyclicClassState a -> AcyclicClassState -> b)
-  -> AcyclicClassChecker a
-  -> AcyclicClassState
-  -> ClassInheritanceGraph
-  -> b
-runAnalyzer stateRunner classAnalyzer state classGraph = stateRunner (computeState classGraph classAnalyzer) state
+computeClassAnalyzer classChecker inheritanceGraph =
+  fst $ execRWS classChecker inheritanceGraph (AcyclicClassState [] [])
 
 computeClassInheritancePath :: AcyclicClassChecker Type -> AcyclicClassState -> ClassInheritanceGraph -> Path
-computeClassInheritancePath classPathChecker = runAnalyzer evalState (checkPath classPathChecker [])
+computeClassInheritancePath classPathChecker classState inheritanceGraph =
+  fst $ evalRWS (checkPath classPathChecker []) inheritanceGraph classState

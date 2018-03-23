@@ -20,6 +20,7 @@ import SemanticAnalyzer.TypedAST
 import SemanticAnalyzer.VariableIntroduction
 
 import Control.Monad.Extra ((&&^), unlessM)
+import Control.Monad.RWS.Lazy (evalRWS)
 import Control.Monad.Reader (ask)
 import Control.Monad.State (get)
 import Control.Monad.Trans.Maybe (MaybeT(MaybeT), runMaybeT)
@@ -33,7 +34,6 @@ import SemanticAnalyzer.IsType ((/>), (>==<), toType)
 import SemanticAnalyzer.Maybe (runMaybe)
 import SemanticAnalyzer.MethodDispatch (checkMethod)
 import SemanticAnalyzer.SemanticAnalyzer
-import SemanticAnalyzer.SemanticAnalyzerRunner (runAnalyzer)
 import SemanticAnalyzer.SemanticError (SemanticError(..))
 import SemanticAnalyzer.Type (Type(TypeName))
 
@@ -49,8 +49,7 @@ instance TypeInferrable ProgramAnalyzer AST.Class ClassT where
   semanticCheck (AST.Class className' parentName features) = do
     classEnvironment <- ask
     let classRecord = classEnvironment M.! className'
-    let (featuresT, errors) =
-          runAnalyzer className' classEnvironment (getObjectEnvironment classRecord) featuresAnalyzer
+    let (featuresT, errors) = evalRWS featuresAnalyzer (className', classEnvironment) (getObjectEnvironment classRecord)
     tell errors
     return $ ClassT className' parentName featuresT
     where

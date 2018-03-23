@@ -4,7 +4,8 @@
 module SemanticAnalyzer.ClassChecker where
 
 import Control.Monad.Loops (whileM_)
-import Control.Monad.Reader (ReaderT, ask, runReaderT)
+import Control.Monad.RWS.Lazy (RWS, execRWS)
+import Control.Monad.Reader (ask)
 import Control.Monad.State
 import Control.Monad.Writer
 import Data.Functor.Classes
@@ -30,7 +31,7 @@ data AcyclicClassState = AcyclicClassState
   , getCycleNodes :: [T.Type]
   } deriving (Show, Eq)
 
-type AcyclicClassChecker = ReaderT ClassInheritanceGraph (WriterT [ClassRelationshipError] (State AcyclicClassState))
+type AcyclicClassChecker = RWS ClassInheritanceGraph [ClassRelationshipError] AcyclicClassState
 
 data Path
   = CyclicPath [T.Type]
@@ -54,11 +55,10 @@ checkIllegalInheritance graph = foldr buildErrors [] (M.toList graph)
       | otherwise = accList
 
 checkPrimitiveInheritance :: T.Type -> Bool
-checkPrimitiveInheritance parentName = parentName `elem` "SELF_TYPE":primitiveTypes
+checkPrimitiveInheritance parentName = parentName `elem` "SELF_TYPE" : primitiveTypes
 
 checkAcyclicErrors :: ClassInheritanceGraph -> [ClassRelationshipError]
-checkAcyclicErrors classInheritanceGraph =
-  evalState (execWriterT $ runReaderT acyclicAnalyzer classInheritanceGraph) (AcyclicClassState [] [])
+checkAcyclicErrors classInheritanceGraph = snd $ execRWS acyclicAnalyzer classInheritanceGraph (AcyclicClassState [] [])
 
 acyclicAnalyzer :: AcyclicClassChecker ()
 acyclicAnalyzer = do
