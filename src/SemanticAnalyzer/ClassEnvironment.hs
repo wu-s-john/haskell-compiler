@@ -3,14 +3,15 @@
 module SemanticAnalyzer.ClassEnvironment where
 
 import Control.Monad (join)
-import Control.Monad.Writer (Writer, tell)
-import qualified Data.Map as M
+import Control.Monad.Writer.Lazy (Writer, tell)
+import qualified Data.Map.Lazy as M
+import Data.String (fromString)
 import Parser.AST (Class(..), Program(..))
+import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Class
        (AttributeMap, ClassRecord(..), MethodMap, MethodRecord(..), toMap)
 import qualified SemanticAnalyzer.ClassChecker as CC
 import SemanticAnalyzer.Type (Type(..))
-import qualified Parser.TerminalNode as T
 
 type ClassEnvironment = M.Map String ClassRecord
 
@@ -21,24 +22,28 @@ data InheritanceErrors
                               , originalType :: Type }
   deriving (Show, Eq)
 
---todo this will probably be part of a class
-createEnvironment :: CC.ClassInheritanceGraph -> Program -> ClassEnvironment
-createEnvironment inheritanceGraph (Program classes) = cache
+-- todo Lazy evaluation cannot be implemented correctly for the time being with a Writer monad
+createEnvironment :: CC.ClassInheritanceGraph -> Program -> Writer [InheritanceErrors] ClassEnvironment
+createEnvironment inheritanceGraph (Program classes) = cacheM
   where
-    cache = M.fromList $ map toClassTupleRecord classes
+    cacheM = M.fromList <$> mapM toClassTupleRecord classes
     computeClassRecord className' features =
       let newAttributes = toMap features
           newMethods = toMap features
           parentName' = inheritanceGraph M.! className'
-          parentRecord = cache M.! parentName'
-      in if inheritanceGraph M.! className' == "Object"
-           then ClassRecord className' ObjectClass newMethods newAttributes
-           else ClassRecord
-                  className'
-                  parentRecord
-                  (newMethods `M.union` methods parentRecord)
-                  (newAttributes `M.union` attributes parentRecord)
-    toClassTupleRecord (Class currentClassName _ features) = (currentClassName, computeClassRecord currentClassName features)
+      in do parentRecord <-
+              if parentName' == "Object"
+                then return ObjectClass
+                else (M.! parentName') <$> cacheM
+            case parentRecord of
+              (ClassRecord _ _ parentMethods parentAttributes) -> do
+                attributes' <- mergeAttributes (fromString className') newAttributes parentAttributes
+                methods' <- mergeMethods newMethods parentMethods
+                return $ ClassRecord className' parentRecord methods' attributes'
+              ObjectClass -> return $ ClassRecord className' ObjectClass newMethods newAttributes
+    toClassTupleRecord (Class currentClassName _ features) = do
+      computedClass <- computeClassRecord currentClassName features
+      return (currentClassName, computedClass)
 
 mergeAttributes :: Type -> AttributeMap -> AttributeMap -> Writer [InheritanceErrors] AttributeMap
 mergeAttributes className' classAttrs parentAttr = do
