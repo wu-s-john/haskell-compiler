@@ -7,23 +7,16 @@ import Control.Monad.Writer.Lazy (Writer, tell)
 import qualified Data.Map.Lazy as M
 import Data.String (fromString)
 import Parser.AST (Class(..), Program(..))
-import qualified Parser.TerminalNode as T
 import SemanticAnalyzer.Class
        (AttributeMap, ClassRecord(..), MethodMap, MethodRecord(..), toMap)
 import qualified SemanticAnalyzer.ClassChecker as CC
+import SemanticAnalyzer.InheritanceFeatureError
 import SemanticAnalyzer.Type (Type(..))
 
 type ClassEnvironment = M.Map String ClassRecord
 
-data InheritanceErrors
-  = RedefinedAttribute { attributeName :: T.Identifier
-                       , inheritedParent :: Type }
-  | DifferentMethodReturnType { newType :: Type
-                              , originalType :: Type }
-  deriving (Show, Eq)
-
 -- todo Lazy evaluation cannot be implemented correctly for the time being with a Writer monad
-createEnvironment :: CC.ClassInheritanceGraph -> Program -> Writer [InheritanceErrors] ClassEnvironment
+createEnvironment :: CC.ClassInheritanceGraph -> Program -> Writer [InheritanceFeatureError] ClassEnvironment
 createEnvironment inheritanceGraph (Program classes) = cacheM
   where
     cacheM = M.fromList <$> mapM toClassTupleRecord classes
@@ -45,13 +38,13 @@ createEnvironment inheritanceGraph (Program classes) = cacheM
       computedClass <- computeClassRecord currentClassName features
       return (currentClassName, computedClass)
 
-mergeAttributes :: Type -> AttributeMap -> AttributeMap -> Writer [InheritanceErrors] AttributeMap
+mergeAttributes :: Type -> AttributeMap -> AttributeMap -> Writer [InheritanceFeatureError] AttributeMap
 mergeAttributes className' classAttrs parentAttr = do
   let redefinedAttrs = classAttrs `M.intersection` parentAttr
   tell [RedefinedAttribute attributeName' className' | attributeName' <- M.keys redefinedAttrs]
   return $ classAttrs `M.union` parentAttr
 
-mergeMethods :: MethodMap -> MethodMap -> Writer [InheritanceErrors] MethodMap
+mergeMethods :: MethodMap -> MethodMap -> Writer [InheritanceFeatureError] MethodMap
 mergeMethods classMethods parentMethods = do
   let redefinedMethods = classMethods `M.intersection` parentMethods
   tell $ join [evaluateError redefinedMethodNames | redefinedMethodNames <- M.keys redefinedMethods]

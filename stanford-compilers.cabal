@@ -41,6 +41,8 @@ library
                      , SemanticAnalyzer.SemanticAnalyzerRunner
                      , SemanticAnalyzer.Maybe
                      , SemanticAnalyzer.IsType
+                     , SemanticAnalyzer.ClassRelationshipError
+                     , SemanticAnalyzer.InheritanceFeatureError
                      , Util
 
   build-depends:       base >= 4.7 && < 5

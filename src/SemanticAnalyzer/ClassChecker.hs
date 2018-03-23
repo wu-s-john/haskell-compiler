@@ -13,23 +13,15 @@ import qualified Data.Map as M
 import qualified Data.Set as S
 import Parser.AST (Class(Class), Program(Program))
 import qualified Parser.TerminalNode as T
+import SemanticAnalyzer.ClassRelationshipError
 import SemanticAnalyzer.PrimitiveTypes (primitiveTypes)
-
-data ClassError
-  = UndefinedInheritance String
-                         String
-  | PrimitiveInheritance String
-                         String
-  | InheritanceCycle String
-  | PreviouslyDefined String
-  deriving (Show, Eq)
 
 type ClassInheritanceGraph = M.Map T.Type T.Type
 
-type ClassGraphBuilder = Writer [ClassError] ClassInheritanceGraph
+type ClassGraphBuilder = Writer [ClassRelationshipError] ClassInheritanceGraph
 
 data GraphCheckerResult
-  = Error [ClassError]
+  = Error [ClassRelationshipError]
   | Graph ClassInheritanceGraph
   deriving (Show, Eq)
 
@@ -38,7 +30,7 @@ data AcyclicClassState = AcyclicClassState
   , getCycleNodes :: [T.Type]
   } deriving (Show, Eq)
 
-type AcyclicClassChecker = ReaderT ClassInheritanceGraph (WriterT [ClassError] (State AcyclicClassState))
+type AcyclicClassChecker = ReaderT ClassInheritanceGraph (WriterT [ClassRelationshipError] (State AcyclicClassState))
 
 data Path
   = CyclicPath [T.Type]
@@ -53,7 +45,7 @@ createClassGraph (Program classList) = foldM addClass M.empty classList
         Just _ -> tell [PreviouslyDefined className] >> return classInheritanceMap
         Nothing -> return $ M.insert className inheritName classInheritanceMap
 
-checkIllegalInheritance :: ClassInheritanceGraph -> [ClassError]
+checkIllegalInheritance :: ClassInheritanceGraph -> [ClassRelationshipError]
 checkIllegalInheritance graph = foldr buildErrors [] (M.toList graph)
   where
     buildErrors (className, parentName) accList
@@ -64,7 +56,7 @@ checkIllegalInheritance graph = foldr buildErrors [] (M.toList graph)
 checkPrimitiveInheritance :: T.Type -> Bool
 checkPrimitiveInheritance parentName = parentName `elem` "SELF_TYPE":primitiveTypes
 
-checkAcyclicErrors :: ClassInheritanceGraph -> [ClassError]
+checkAcyclicErrors :: ClassInheritanceGraph -> [ClassRelationshipError]
 checkAcyclicErrors classInheritanceGraph =
   evalState (execWriterT $ runReaderT acyclicAnalyzer classInheritanceGraph) (AcyclicClassState [] [])
 

@@ -12,6 +12,7 @@ import qualified Data.Map as M
 import Parser.ParserUtil (parse)
 import Parser.TerminalNode (Type)
 import SemanticAnalyzer.ClassChecker
+import SemanticAnalyzer.ClassRelationshipError
 import Test.Hspec
        (Expectation, Spec, describe, hspec, it, shouldBe)
 
@@ -115,7 +116,7 @@ spec =
 
 --      it "should build an empty graph" $  "" `testGraphVerifier` Graph M.empty
 --      it "should identify cyclic errors"
-testBuilder :: String -> ClassInheritanceGraph -> [ClassError] -> Expectation
+testBuilder :: String -> ClassInheritanceGraph -> [ClassRelationshipError] -> Expectation
 testBuilder program expectedMap expectedErrors = do
   actualMap `shouldBe` expectedMap
   actualErrors `shouldBe` expectedErrors

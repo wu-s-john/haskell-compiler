@@ -8,25 +8,22 @@ module SemanticAnalyzer.ClassEnvironmentSpec
   , spec
   ) where
 
+import Control.Monad.Writer (runWriter)
 import qualified Data.Map as M
-
+import Data.String (fromString)
 import qualified Parser.AST as AST
-import qualified Parser.TerminalNode as T
-
 import Parser.ParserUtil (parse)
-import Util
-
+import qualified Parser.TerminalNode as T
+import SemanticAnalyzer.Class (ClassRecord(..), toMap)
 import SemanticAnalyzer.ClassChecker (ClassInheritanceGraph)
 import SemanticAnalyzer.ClassEnvironment
-       (ClassEnvironment, InheritanceErrors(..), createEnvironment,
-        mergeAttributes, mergeMethods)
-
-import Control.Monad.Writer (runWriter)
-import Data.String (fromString)
-import SemanticAnalyzer.Class (ClassRecord(..), toMap)
+       (ClassEnvironment, createEnvironment, mergeAttributes,
+        mergeMethods)
 import SemanticAnalyzer.ClassEnvironmentUtil (toClassRecord)
+import SemanticAnalyzer.InheritanceFeatureError
 import Test.Hspec
        (Expectation, Spec, describe, hspec, it, shouldBe)
+import Util
 
 main :: IO ()
 main = hspec spec
@@ -42,16 +39,6 @@ spec =
           [("Foo", "Object")]
           "class Foo {x : X; twice(num: Int): Int {2 * x};};"
           (["Foo" =: fooClassRecord], [])
---      it "should be able to retrieve attributes from it's parent class given that the class is empty" $
---        testCreateEnvironment
---          [("Bar", "Foo"), ("Foo", "Object")]
---          "class Foo {x : X; twice(num: Int): Int {2 * x};}; class Bar inherits Foo {};"
---          (["Bar" =: fooFeatures "Bar" fooClassRecord, "Foo" =: fooClassRecord], [])
---      it "should be able to recieve attributes from it's parent class and have it's own parameters" $
---        testCreateEnvironment
---          [("Bar", "Foo"), ("Foo", "Object")]
---          "class Foo {x : X; twice(num: Int): Int {2 * x};}; class Bar inherits Foo {y : Y;};"
---          (["Bar" =: toClassRecord "Bar" fooClassRecord fooMethods ["x : X", "y : Y"], "Foo" =: fooClassRecord], [])
     describe "mergeAttributes" $ do
       it "should not produce errors if a class does not inherit attributes that it's parent has" $
         testAttribute ["x : X"] ["y : Y"] (["x : X", "y : Y"], [])
@@ -66,17 +53,28 @@ spec =
           ["foo(x : X) : Bar"]
           (["foo(x : X) : Z"], [DifferentMethodReturnType (fromString "Z") (fromString "Bar")])
   where
-    testCreateEnvironment :: ClassInheritanceGraph -> String -> (ClassEnvironment, [InheritanceErrors]) -> Expectation
+    testCreateEnvironment ::
+         ClassInheritanceGraph -> String -> (ClassEnvironment, [InheritanceFeatureError]) -> Expectation
     testCreateEnvironment classGraph sourceCode expectedResult =
       runWriter (createEnvironment classGraph (parse sourceCode)) `shouldBe` expectedResult
-    testAttribute :: [String] -> [String] -> ([String], [InheritanceErrors]) -> Expectation
+    testAttribute :: [String] -> [String] -> ([String], [InheritanceFeatureError]) -> Expectation
     testAttribute classAttr parentAttr (expectedMapString, errors) =
       runWriter (mergeAttributes (fromString "Foo") (toMap classAttr) (toMap parentAttr)) `shouldBe`
       (toMap expectedMapString, errors)
-    testMethod :: [String] -> [String] -> ([String], [InheritanceErrors]) -> Expectation
+    testMethod :: [String] -> [String] -> ([String], [InheritanceFeatureError]) -> Expectation
     testMethod classStrings parentStrings (expectedMapString, errors) =
       runWriter (mergeMethods (toMap classStrings) (toMap parentStrings)) `shouldBe` (toMap expectedMapString, errors)
 
+--      it "should be able to retrieve attributes from it's parent class given that the class is empty" $
+--        testCreateEnvironment
+--          [("Bar", "Foo"), ("Foo", "Object")]
+--          "class Foo {x : X; twice(num: Int): Int {2 * x};}; class Bar inherits Foo {};"
+--          (["Bar" =: fooFeatures "Bar" fooClassRecord, "Foo" =: fooClassRecord], [])
+--      it "should be able to recieve attributes from it's parent class and have it's own parameters" $
+--        testCreateEnvironment
+--          [("Bar", "Foo"), ("Foo", "Object")]
+--          "class Foo {x : X; twice(num: Int): Int {2 * x};}; class Bar inherits Foo {y : Y;};"
+--          (["Bar" =: toClassRecord "Bar" fooClassRecord fooMethods ["x : X", "y : Y"], "Foo" =: fooClassRecord], [])
 fooFeatures :: T.Identifier -> ClassRecord -> ClassRecord
 fooFeatures name parent' = toClassRecord name parent' fooMethods ["x : X"]
 
